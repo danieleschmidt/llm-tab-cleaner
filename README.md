@@ -6,6 +6,11 @@
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Apache Spark](https://img.shields.io/badge/Apache%20Spark-3.0+-orange.svg)](https://spark.apache.org/)
 [![DuckDB](https://img.shields.io/badge/DuckDB-0.9+-yellow.svg)](https://duckdb.org/)
+[![CI](https://github.com/terragonlabs/llm-tab-cleaner/workflows/CI/badge.svg)](https://github.com/terragonlabs/llm-tab-cleaner/actions)
+[![codecov](https://codecov.io/gh/terragonlabs/llm-tab-cleaner/branch/main/graph/badge.svg)](https://codecov.io/gh/terragonlabs/llm-tab-cleaner)
+[![PyPI version](https://badge.fury.io/py/llm-tab-cleaner.svg)](https://badge.fury.io/py/llm-tab-cleaner)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 ## 🧹 Overview
 

@@ -1,0 +1,90 @@
+name: Bug Report
+description: Report a bug or unexpected behavior in LLM Tab Cleaner
+title: "[BUG] "
+labels: ["bug", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the form below with as much detail as possible.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Describe the bug...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Initialize cleaner with...
+        2. Run cleaning on...
+        3. See error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen
+      placeholder: Expected behavior...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened
+      placeholder: Actual behavior...
+    validations:
+      required: true
+
+  - type: textarea
+    id: code
+    attributes:
+      label: Code Sample
+      description: Minimal code sample that reproduces the issue
+      render: python
+      placeholder: |
+        from llm_tab_cleaner import TableCleaner
+        # Your code here...
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Your environment details
+      render: markdown
+      placeholder: |
+        - OS: [e.g. Windows 10, macOS 12.0, Ubuntu 20.04]
+        - Python Version: [e.g. 3.9.7]
+        - LLM Tab Cleaner Version: [e.g. 0.1.0]
+        - LLM Provider: [e.g. anthropic, openai]
+        - Dependencies: [relevant package versions]
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs/Stack Trace
+      description: Any relevant error messages or stack traces
+      render: text
+      placeholder: Paste error logs here...
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context about the problem
+      placeholder: Additional context...

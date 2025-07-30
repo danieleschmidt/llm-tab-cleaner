@@ -1,0 +1,139 @@
+{
+    "name": "LLM Tab Cleaner Development",
+    "dockerComposeFile": "../docker-compose.yml",
+    "service": "llm-cleaner-dev",
+    "workspaceFolder": "/app",
+    "shutdownAction": "stopCompose",
+
+    // Features to add to the dev container
+    "features": {
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "installZsh": true,
+            "configureZshAsDefaultShell": true,
+            "installOhMyZsh": true,
+            "username": "llmuser",
+            "userUid": 1000,
+            "userGid": 1000
+        },
+        "ghcr.io/devcontainers/features/git:1": {
+            "ppa": true,
+            "version": "latest"
+        },
+        "ghcr.io/devcontainers/features/github-cli:1": {
+            "installDirectlyFromGitHubRelease": true,
+            "version": "latest"
+        },
+        "ghcr.io/devcontainers/features/python:1": {
+            "version": "3.11",
+            "installTools": true,
+            "installJupyterlab": true
+        }
+    },
+
+    // Configure tool-specific properties
+    "customizations": {
+        "vscode": {
+            // Extensions to install
+            "extensions": [
+                "ms-python.python",
+                "ms-python.black-formatter",
+                "ms-python.ruff",
+                "ms-python.mypy-type-checker",
+                "ms-python.pytest",
+                "ms-toolsai.jupyter",
+                "GitHub.copilot",
+                "GitHub.copilot-chat",
+                "redhat.vscode-yaml",
+                "ms-vscode.docker",
+                "ms-azuretools.vscode-docker",
+                "eamodio.gitlens",
+                "streetsidesoftware.code-spell-checker",
+                "ms-vscode.test-adapter-converter",
+                "hbenl.vscode-test-explorer"
+            ],
+
+            // Settings
+            "settings": {
+                "python.defaultInterpreterPath": "/usr/local/bin/python",
+                "python.terminal.activateEnvironment": false,
+                "python.testing.pytestEnabled": true,
+                "python.testing.pytestArgs": [
+                    "tests/"
+                ],
+                "python.linting.enabled": true,
+                "python.linting.ruffEnabled": true,
+                "python.formatting.provider": "black",
+                "python.typeChecking": "mypy",
+                "files.exclude": {
+                    "**/__pycache__": true,
+                    "**/*.pyc": true,
+                    "**/.pytest_cache": true,
+                    "**/.mypy_cache": true,
+                    "**/.ruff_cache": true
+                },
+                "editor.formatOnSave": true,
+                "editor.codeActionsOnSave": {
+                    "source.organizeImports": true,
+                    "source.fixAll.ruff": true
+                },
+                "files.trimTrailingWhitespace": true,
+                "files.insertFinalNewline": true,
+                "editor.rulers": [88],
+                "git.enableSmartCommit": true,
+                "git.confirmSync": false,
+                "terminal.integrated.defaultProfile.linux": "zsh"
+            }
+        }
+    },
+
+    // Environment variables
+    "containerEnv": {
+        "PYTHONPATH": "/app/src",
+        "PYTHONUNBUFFERED": "1",
+        "PYTHONDONTWRITEBYTECODE": "1"
+    },
+
+    // Mount the project directory and preserve command history
+    "mounts": [
+        "source=${localWorkspaceFolder}/.devcontainer/history,target=/home/llmuser/.history,type=bind,consistency=cached"
+    ],
+
+    // Post-create command to set up the development environment
+    "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+    // Forward ports for development servers
+    "forwardPorts": [
+        8000,  // Documentation server
+        8888,  // Jupyter
+        5000   // Flask development server
+    ],
+
+    // Port attributes
+    "portsAttributes": {
+        "8000": {
+            "label": "Documentation",
+            "onAutoForward": "notify"
+        },
+        "8888": {
+            "label": "Jupyter Lab",
+            "onAutoForward": "openBrowser"
+        },
+        "5000": {
+            "label": "Development Server",
+            "onAutoForward": "notify"
+        }
+    },
+
+    // Run as non-root user
+    "remoteUser": "llmuser",
+    "updateRemoteUserUID": true,
+
+    // Development container lifecycle scripts
+    "initializeCommand": "echo 'Initializing LLM Tab Cleaner development environment...'",
+    "onCreateCommand": "echo 'Development container created successfully!'",
+    
+    // Additional dev container options
+    "privileged": false,
+    "capAdd": [],
+    "securityOpt": []
+}

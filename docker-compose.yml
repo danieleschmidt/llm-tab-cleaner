@@ -1,0 +1,176 @@
+version: '3.8'
+
+services:
+  # Main LLM Tab Cleaner service
+  llm-cleaner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        BUILD_DATE: ${BUILD_DATE:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}
+        VERSION: ${VERSION:-0.1.0}
+        VCS_REF: ${VCS_REF:-$(git rev-parse --short HEAD)}
+    image: llm-tab-cleaner:latest
+    container_name: llm-tab-cleaner
+    environment:
+      # LLM Configuration
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - LLM_PROVIDER=${LLM_PROVIDER:-anthropic}
+      - CONFIDENCE_THRESHOLD=${CONFIDENCE_THRESHOLD:-0.85}
+      
+      # Processing Configuration
+      - BATCH_SIZE=${BATCH_SIZE:-1000}
+      - MAX_WORKERS=${MAX_WORKERS:-4}
+      - CACHE_ENABLED=${CACHE_ENABLED:-true}
+      
+      # Logging Configuration
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+    volumes:
+      # Data volumes
+      - ./data:/app/data:rw
+      - ./logs:/app/logs:rw
+      - ./temp:/app/temp:rw
+      
+      # Configuration
+      - ./config:/app/config:ro
+    networks:
+      - llm-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "from llm_tab_cleaner import TableCleaner; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Development service with additional tools
+  llm-cleaner-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    image: llm-tab-cleaner:dev
+    container_name: llm-tab-cleaner-dev
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - LLM_PROVIDER=${LLM_PROVIDER:-anthropic}
+      - PYTHONPATH=/app/src
+    volumes:
+      # Mount source code for development
+      - .:/app:rw
+      - llm-dev-cache:/home/llmuser/.cache
+    networks:
+      - llm-network
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+    profiles:
+      - dev
+
+  # Spark-enabled service for distributed processing
+  llm-cleaner-spark:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: spark
+    image: llm-tab-cleaner:spark
+    container_name: llm-tab-cleaner-spark
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - LLM_PROVIDER=${LLM_PROVIDER:-anthropic}
+      - SPARK_MASTER_URL=${SPARK_MASTER_URL:-local[*]}
+      - SPARK_DRIVER_MEMORY=${SPARK_DRIVER_MEMORY:-2g}
+      - SPARK_EXECUTOR_MEMORY=${SPARK_EXECUTOR_MEMORY:-2g}
+    volumes:
+      - ./data:/app/data:rw
+      - ./logs:/app/logs:rw
+      - spark-warehouse:/app/spark-warehouse
+    networks:
+      - llm-network
+    profiles:
+      - spark
+
+  # DuckDB service for local analytics
+  duckdb:
+    image: duckdb/duckdb:latest
+    container_name: llm-duckdb
+    volumes:
+      - ./data:/data:rw
+      - duckdb-data:/app/duckdb
+    networks:
+      - llm-network
+    profiles:
+      - analytics
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: llm-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-llmcache}
+    volumes:
+      - redis-data:/data
+    networks:
+      - llm-network
+    profiles:
+      - cache
+
+  # Monitoring with Prometheus (optional)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: llm-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - llm-network
+    profiles:
+      - monitoring
+
+  # Grafana for visualization (optional)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: llm-grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    ports:
+      - "3000:3000"
+    networks:
+      - llm-network
+    profiles:
+      - monitoring
+
+networks:
+  llm-network:
+    driver: bridge
+    name: llm-tab-cleaner-network
+
+volumes:
+  llm-dev-cache:
+    name: llm-dev-cache
+  duckdb-data:
+    name: llm-duckdb-data
+  redis-data:
+    name: llm-redis-data
+  spark-warehouse:
+    name: llm-spark-warehouse
+  prometheus-data:
+    name: llm-prometheus-data
+  grafana-data:
+    name: llm-grafana-data

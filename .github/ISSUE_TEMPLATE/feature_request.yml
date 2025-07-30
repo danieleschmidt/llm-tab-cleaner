@@ -1,0 +1,90 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for LLM Tab Cleaner
+title: "[FEATURE] "
+labels: ["enhancement", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature! Please provide details below.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve?
+      placeholder: I'm frustrated when...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe your proposed solution
+      placeholder: I would like to see...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Other solutions you've considered
+      placeholder: Alternative approaches...
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Code Examples
+      description: How would this feature be used?
+      render: python
+      placeholder: |
+        # Example usage
+        cleaner = TableCleaner(new_feature=True)
+        result = cleaner.new_method()
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature to you?
+      options:
+        - Low - Nice to have
+        - Medium - Would be helpful
+        - High - Important for my use case
+        - Critical - Blocking my work
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: areas
+    attributes:
+      label: Feature Areas
+      description: Which areas does this feature relate to?
+      options:
+        - label: Core cleaning functionality
+        - label: LLM integration
+        - label: Performance optimization
+        - label: Data formats/sources
+        - label: Monitoring/observability
+        - label: Documentation
+        - label: Testing
+        - label: CLI interface
+        - label: API/SDK
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I'm willing to help implement this feature
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context about the feature request
+      placeholder: Additional details...
