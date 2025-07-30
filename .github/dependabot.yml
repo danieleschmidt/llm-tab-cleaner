@@ -1,0 +1,70 @@
+version: 2
+updates:
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "danieleschmidt"
+    assignees:
+      - "danieleschmidt"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "automated"
+    groups:
+      production-dependencies:
+        patterns:
+          - "pandas"
+          - "numpy"
+          - "pydantic"
+          - "openai"
+          - "anthropic"
+          - "requests"
+          - "jsonpatch"
+          - "sqlalchemy"
+          - "duckdb"
+          - "pyarrow"
+      development-dependencies:
+        patterns:
+          - "pytest*"
+          - "black"
+          - "ruff"
+          - "mypy"
+          - "pre-commit"
+          - "mkdocs*"
+      spark-dependencies:
+        patterns:
+          - "pyspark"
+          - "delta-spark"
+      optional-dependencies:
+        patterns:
+          - "great-expectations"
+          - "apache-airflow"
+          - "hypothesis"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "danieleschmidt"
+    assignees:
+      - "danieleschmidt"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "ci/cd"
+      - "automated"
