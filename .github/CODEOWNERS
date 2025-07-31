@@ -1,0 +1,39 @@
+# CODEOWNERS file for LLM Tab Cleaner
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global owners - these users are requested for review when someone opens a pull request
+* @danieleschmidt
+
+# Core package code
+/src/llm_tab_cleaner/ @danieleschmidt
+
+# Configuration files
+/pyproject.toml @danieleschmidt
+/Makefile @danieleschmidt
+/.pre-commit-config.yaml @danieleschmidt
+
+# CI/CD and workflows
+/.github/ @danieleschmidt
+/docs/workflows/ @danieleschmidt
+
+# Documentation
+/README.md @danieleschmidt
+/docs/ @danieleschmidt
+/CONTRIBUTING.md @danieleschmidt
+/SECURITY.md @danieleschmidt
+
+# Tests
+/tests/ @danieleschmidt
+
+# Docker and containerization
+/Dockerfile @danieleschmidt
+/docker-compose.yml @danieleschmidt
+/.dockerignore @danieleschmidt
+
+# Security and compliance
+/SECURITY.md @danieleschmidt
+/.github/dependabot.yml @danieleschmidt
+
+# Release and packaging
+/CHANGELOG.md @danieleschmidt
+/LICENSE @danieleschmidt
