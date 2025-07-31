@@ -1,0 +1,262 @@
+# GitHub Actions Security Workflow Template for LLM Tab Cleaner
+# Save this file as .github/workflows/security.yml
+
+name: Security Scan
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run security scans weekly on Mondays at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run Safety check
+        run: |
+          uv run pip list --format=json > requirements-installed.json
+          uv run safety check --json --output safety-report.json || true
+          cat safety-report.json
+
+      - name: Run pip-audit
+        run: |
+          uv run pip install pip-audit
+          uv run pip-audit --format=json --output=pip-audit-report.json || true
+          cat pip-audit-report.json
+
+      - name: Upload vulnerability reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vulnerability-reports
+          path: |
+            safety-report.json
+            pip-audit-report.json
+            requirements-installed.json
+
+  code-security-scan:
+    name: Code Security Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Run Bandit security scan
+        run: |
+          uv run pip install bandit[toml]
+          uv run bandit -r src/ -f json -o bandit-report.json -x '*/tests/*' || true
+          uv run bandit -r src/ -f sarif -o bandit-results.sarif -x '*/tests/*' || true
+
+      - name: Run Semgrep security scan
+        uses: securecodewarrior/github-action-add-sarif@v1
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        with:
+          sarif-file: 'semgrep-results.sarif'
+          token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Upload security scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: bandit-results.sarif
+          category: bandit
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-scan-reports
+          path: |
+            bandit-report.json
+            bandit-results.sarif
+
+  secret-scan:
+    name: Secret Detection
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run TruffleHog OSS
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --debug --only-verified
+
+  container-security:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && !github.event.pull_request.draft)
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t llm-tab-cleaner:security-scan .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'llm-tab-cleaner:security-scan'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: trivy
+
+      - name: Run Trivy for high/critical vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'llm-tab-cleaner:security-scan'
+          format: 'table'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
+
+  sbom-generation:
+    name: Software Bill of Materials
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Generate SBOM with syft
+        uses: anchore/sbom-action@v0
+        with:
+          path: ./
+          format: spdx-json
+          artifact-name: llm-tab-cleaner-sbom.spdx.json
+
+      - name: Generate Python-specific SBOM
+        run: |
+          uv run pip install cyclone-dx-bom
+          uv run cyclone-x py --output-file=cyclone-sbom.json
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-reports
+          path: |
+            llm-tab-cleaner-sbom.spdx.json
+            cyclone-sbom.json
+
+  security-report:
+    name: Security Report Summary
+    runs-on: ubuntu-latest
+    needs: [dependency-scan, code-security-scan, secret-scan, container-security, sbom-generation]
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Generate security summary
+        run: |
+          echo "## Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Dependency Scan: ${{ needs.dependency-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Code Security: ${{ needs.code-security-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Secret Detection: ${{ needs.secret-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Container Security: ${{ needs.container-security.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- SBOM Generation: ${{ needs.sbom-generation.result }}" >> $GITHUB_STEP_SUMMARY
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "1. Review security reports in the Actions artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "2. Check the Security tab for any alerts" >> $GITHUB_STEP_SUMMARY
+          echo "3. Address any HIGH/CRITICAL vulnerabilities" >> $GITHUB_STEP_SUMMARY
+
+      - name: Comment on PR with security status
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('🔒 Security Scan Results')
+            );
+            
+            const body = `🔒 **Security Scan Results**
+            
+            | Scan Type | Status |
+            |-----------|--------|
+            | Dependency Vulnerabilities | ${{ needs.dependency-scan.result == 'success' && '✅' || '❌' }} |
+            | Code Security Analysis | ${{ needs.code-security-scan.result == 'success' && '✅' || '❌' }} |
+            | Secret Detection | ${{ needs.secret-scan.result == 'success' && '✅' || '❌' }} |
+            | Container Security | ${{ needs.container-security.result == 'success' && '✅' || '❌' }} |
+            | SBOM Generation | ${{ needs.sbom-generation.result == 'success' && '✅' || '❌' }} |
+            
+            View detailed reports in the [Actions artifacts](${context.payload.pull_request.html_url}/checks).`;
+            
+            if (botComment) {
+              github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
