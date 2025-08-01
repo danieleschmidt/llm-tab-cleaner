@@ -1,5 +1,4 @@
-# GitHub Actions CI/CD Workflow Template for LLM Tab Cleaner
-# Save this file as .github/workflows/ci.yml
+# GitHub Actions CI/CD Workflow for LLM Tab Cleaner
 
 name: CI
 
