@@ -1,131 +1,67 @@
-# Git
-.git
+# Docker ignore file for LLM Tab Cleaner
+# Exclude unnecessary files from Docker build context
+
+# Git and version control
+.git/
 .gitignore
 .gitattributes
+.github/
 
 # Documentation
-README.md
-CHANGELOG.md
-CONTRIBUTING.md
-CODE_OF_CONDUCT.md
-SECURITY.md
 docs/
 *.md
+!README.md
 
-# Python
+# Development tools and configs
+.vscode/
+.idea/
+*.sublime-*
+.devcontainer/
+
+# Testing and coverage
+tests/
+coverage/
+htmlcov/
+.coverage
+.pytest_cache/
+.tox/
+.nox/
+
+# Python caches and artifacts
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
 .Python
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
 
-# Testing
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-htmlcov/
-
-# Environments
+# Virtual environments
 .env
-.env.local
-.env.development
-.env.test
-.env.production
 .venv
 env/
 venv/
-ENV/
-env.bak/
-venv.bak/
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
+# Development and local files
+.env*
+!.env.example
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Development
-.pre-commit-config.yaml
-.editorconfig
-Makefile
 *.log
-
-# Docker
-Dockerfile*
-docker-compose*.yml
-.dockerignore
-
-# CI/CD
-.github/
-.gitlab-ci.yml
-.travis.yml
-.circleci/
-
-# Temporary files
-tmp/
-temp/
-*.tmp
-*.temp
-
-# Data files (exclude from image)
-data/
 logs/
-*.csv
-*.json
-*.parquet
-*.db
-*.sqlite
+temp/
+tmp/
 
-# Jupyter
-.ipynb_checkpoints
+# Data and model files
+data/
+datasets/
+models/
+*.pkl
+*.h5
+*.model
 
-# MyPy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre
-.pyre/
-
-# pytype
-.pytype/
-
-# Cython
-cython_debug/
-
-# Ruff
-.ruff_cache/
+# Security and secrets
+secrets/
+credentials/
+*.pem
+*.key
+*.crt
