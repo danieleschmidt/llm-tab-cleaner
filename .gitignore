@@ -205,3 +205,344 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# =============================================================================
+# LLM Tab Cleaner Specific
+# =============================================================================
+
+# Local configuration and secrets
+.env.local
+.env.*.local
+secrets/
+credentials/
+
+# Data files and processing artifacts
+data/
+datasets/
+cleaning_outputs/
+audit_logs/
+checkpoints/
+tmp/
+temp/
+
+# Model artifacts and caches
+models/
+model_cache/
+llm_cache/
+embeddings_cache/
+
+# Processing state and incremental data
+processing_state/
+incremental_state/
+*.state
+*.checkpoint
+
+# Benchmark and performance test outputs
+benchmarks/
+performance_reports/
+profiling_results/
+
+# Monitoring and observability
+metrics/
+traces/
+logs/
+monitoring_data/
+
+# =============================================================================
+# Development Tools and IDE
+# =============================================================================
+
+# VS Code workspace settings (keep global settings)
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/*.code-workspace
+
+# JetBrains IDEs
+.idea/
+*.iml
+
+# Vim/Neovim
+*.swp
+*.swo
+*~
+.vim/
+.nvim/
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# =============================================================================
+# Operating System
+# =============================================================================
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# =============================================================================
+# Cloud and Infrastructure
+# =============================================================================
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+terraform.tfvars.json
+
+# Kubernetes
+kubeconfig
+*.kubeconfig
+
+# Docker
+docker-compose.override.yml
+.dockerignore.local
+
+# Cloud provider configurations
+.aws/
+.azure/
+.gcp/
+gcloud/
+
+# =============================================================================
+# Security and Compliance
+# =============================================================================
+
+# Security scanning results
+.security/
+security_reports/
+vulnerability_reports/
+compliance_reports/
+
+# SSL/TLS certificates
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+certs/
+ssl/
+
+# Authentication tokens
+.token
+.auth
+auth_tokens/
+
+# =============================================================================
+# Backup and Archive
+# =============================================================================
+
+# Backup files
+*.bak
+*.backup
+*.old
+*~
+backup/
+backups/
+
+# Archive files
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.rar
+*.7z
+archives/
+
+# =============================================================================
+# Temporary and Cache Directories
+# =============================================================================
+
+# General temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+
+# Cache directories
+.cache/
+cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.black_cache/
+node_modules/
+.npm/
+.yarn/
+
+# =============================================================================
+# Database and Storage
+# =============================================================================
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+local.db
+test.db
+
+# Database dumps
+*.sql
+*.dump
+database_dumps/
+
+# =============================================================================
+# Notebooks and Documentation
+# =============================================================================
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Documentation build artifacts
+docs/_build/
+docs/build/
+site/
+_site/
+
+# =============================================================================
+# Package Manager Files
+# =============================================================================
+
+# npm/yarn
+package-lock.json
+yarn.lock
+.yarn/
+.pnp.*
+
+# Pip
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Conda
+.conda/
+conda-meta/
+
+# =============================================================================
+# CI/CD and Deployment
+# =============================================================================
+
+# CI/CD artifacts
+.github/workflows/*.yml.backup
+ci_artifacts/
+deployment_artifacts/
+
+# Container registry credentials
+.docker/config.json
+
+# Deployment configuration
+deploy.env
+.env.production
+.env.staging
+
+# =============================================================================
+# Testing and Quality Assurance
+# =============================================================================
+
+# Test artifacts
+test_outputs/
+test_reports/
+test_data/
+fixtures/
+mocks/
+
+# Coverage reports
+.coverage*
+coverage/
+htmlcov/
+.nyc_output/
+
+# Load testing
+load_test_results/
+performance_test_results/
+
+# =============================================================================
+# Machine Learning and Data Science
+# =============================================================================
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# Weights & Biases
+wandb/
+
+# TensorBoard
+runs/
+tensorboard_logs/
+
+# Model files
+*.h5
+*.pkl
+*.pickle
+*.joblib
+*.model
+
+# Data science notebooks
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
+
+# =============================================================================
+# Spark and Big Data
+# =============================================================================
+
+# Spark
+spark-warehouse/
+metastore_db/
+derby.log
+
+# Hadoop
+.hadoop/
+
+# =============================================================================
+# Monitoring and Observability
+# =============================================================================
+
+# Prometheus
+prometheus_data/
+
+# Grafana
+grafana_data/
+
+# Jaeger
+jaeger_data/
+
+# Application logs
+*.log
+logs/
+log/
