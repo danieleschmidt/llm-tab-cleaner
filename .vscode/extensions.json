@@ -1,0 +1,77 @@
+{
+    "recommendations": [
+        // Python development
+        "ms-python.python",
+        "ms-python.black-formatter",
+        "ms-python.ruff",
+        "ms-python.mypy-type-checker",
+        "ms-python.pytest",
+        
+        // Jupyter and data science
+        "ms-toolsai.jupyter",
+        "ms-toolsai.jupyter-keymap",
+        "ms-toolsai.jupyter-renderers",
+        
+        // AI assistance
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        
+        // Code quality and formatting
+        "streetsidesoftware.code-spell-checker",
+        "editorconfig.editorconfig",
+        "tamasfe.even-better-toml",
+        
+        // Git and version control
+        "eamodio.gitlens",
+        "GitHub.vscode-pull-request-github",
+        "mhutchie.git-graph",
+        
+        // Docker and containers
+        "ms-vscode.docker",
+        "ms-azuretools.vscode-docker",
+        "ms-vscode-remote.remote-containers",
+        
+        // YAML and configuration
+        "redhat.vscode-yaml",
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        
+        // Documentation
+        "yzhang.markdown-all-in-one",
+        "shd101wyy.markdown-preview-enhanced",
+        "bierner.markdown-mermaid",
+        
+        // Testing and debugging
+        "ms-vscode.test-adapter-converter",
+        "hbenl.vscode-test-explorer",
+        "ms-vscode.vscode-json",
+        
+        // SQL and databases
+        "ms-mssql.mssql",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-pg",
+        
+        // Security
+        "ms-vscode.vscode-security",
+        "snyk-security.snyk-vulnerability-scanner",
+        
+        // Performance and monitoring
+        "ms-vscode.vscode-metrics",
+        "ms-vscode.hexdump",
+        
+        // Project management
+        "ms-vscode.vscode-todo-highlight",
+        "gruntfuggly.todo-tree",
+        
+        // API development
+        "humao.rest-client",
+        "ms-vscode.vscode-httpyac"
+    ],
+    "unwantedRecommendations": [
+        // Avoid conflicting formatters
+        "ms-python.autopep8",
+        "ms-python.flake8",
+        
+        // Avoid deprecated extensions
+        "ms-python.vscode-pylance"
+    ]
+}
