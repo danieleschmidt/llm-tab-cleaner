@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "llm-tab-cleaner"
-version = "0.1.0"
+version = "0.3.0"
 description = "A pipeline that operationalizes LLM-assisted data cleaning papers into production ETL"
 readme = "README.md"
 license = {text = "MIT"}
@@ -40,6 +40,8 @@ dependencies = [
     "sqlalchemy>=2.0.0",
     "duckdb>=0.9.0",
     "pyarrow>=14.0.0",
+    "scikit-learn>=1.3.0",
+    "scipy>=1.11.0",
 ]
 
 [project.optional-dependencies]
@@ -47,8 +49,14 @@ spark = [
     "pyspark>=3.4.0",
     "delta-spark>=2.4.0",
 ]
+benchmarks = [
+    "psutil>=5.9.0",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0",
+]
 all = [
     "llm-tab-cleaner[spark]",
+    "llm-tab-cleaner[benchmarks]",
     "great-expectations>=0.18.0",
     "apache-airflow>=2.7.0",
 ]
