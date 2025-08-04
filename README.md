@@ -336,9 +336,9 @@ Priority areas:
 ```bibtex
 @software{llm_tab_cleaner,
   title={LLM-Tab-Cleaner: Production Data Cleaning with Language Models},
-  author={Your Name},
+  author={Daniel Schmidt},
   year={2025},
-  url={https://github.com/yourusername/llm-tab-cleaner}
+  url={https://github.com/danieleschmidt/llm-tab-cleaner}
 }
 ```
 
