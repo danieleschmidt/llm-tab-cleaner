@@ -2,8 +2,11 @@
 
 import logging
 import time
+import functools
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Callable
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 
 import pandas as pd
 import jsonpatch
@@ -11,8 +14,141 @@ import jsonpatch
 from .llm_providers import get_provider
 from .profiler import DataProfiler
 
+try:
+    from .monitoring import get_global_monitor
+    MONITORING_AVAILABLE = True
+except ImportError:
+    MONITORING_AVAILABLE = False
+
 
 logger = logging.getLogger(__name__)
+
+
+def retry_with_backoff(max_retries: int = 3, backoff_factor: float = 1.0):
+    """Decorator for retrying operations with exponential backoff."""
+    def decorator(func: Callable) -> Callable:
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    if attempt == max_retries - 1:
+                        logger.error(f"Operation failed after {max_retries} attempts: {e}")
+                        raise
+                    
+                    wait_time = backoff_factor * (2 ** attempt)
+                    logger.warning(f"Attempt {attempt + 1} failed: {e}. Retrying in {wait_time:.2f}s")
+                    time.sleep(wait_time)
+            
+            return None  # Should never reach here
+        return wrapper
+    return decorator
+
+
+def handle_exceptions(default_return=None, log_errors=True):
+    """Decorator for graceful exception handling."""
+    def decorator(func: Callable) -> Callable:
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                if log_errors:
+                    logger.error(f"Exception in {func.__name__}: {e}")
+                return default_return
+        return wrapper
+    return decorator
+
+
+class CircuitBreaker:
+    """Circuit breaker pattern for handling cascading failures."""
+    
+    def __init__(self, failure_threshold: int = 5, timeout: int = 60):
+        """Initialize circuit breaker.
+        
+        Args:
+            failure_threshold: Number of failures before opening circuit
+            timeout: Time in seconds before attempting to close circuit
+        """
+        self.failure_threshold = failure_threshold
+        self.timeout = timeout
+        self.failure_count = 0
+        self.last_failure_time = None
+        self.state = "closed"  # closed, open, half-open
+        self._lock = threading.Lock()
+    
+    def call(self, func: Callable, *args, **kwargs):
+        """Call function through circuit breaker."""
+        with self._lock:
+            if self.state == "open":
+                if time.time() - self.last_failure_time < self.timeout:
+                    raise Exception("Circuit breaker is OPEN")
+                else:
+                    self.state = "half-open"
+            
+            try:
+                result = func(*args, **kwargs)
+                self.reset()
+                return result
+            except Exception as e:
+                self.record_failure()
+                raise
+    
+    def reset(self):
+        """Reset circuit breaker to closed state."""
+        self.failure_count = 0
+        self.state = "closed"
+    
+    def record_failure(self):
+        """Record a failure and potentially open the circuit."""
+        self.failure_count += 1
+        self.last_failure_time = time.time()
+        
+        if self.failure_count >= self.failure_threshold:
+            self.state = "open"
+            logger.warning(f"Circuit breaker OPENED after {self.failure_count} failures")
+
+
+class ResourcePool:
+    """Thread-safe resource pool for managing expensive resources."""
+    
+    def __init__(self, factory: Callable, max_size: int = 10):
+        """Initialize resource pool.
+        
+        Args:
+            factory: Function to create new resources
+            max_size: Maximum number of resources in pool
+        """
+        self.factory = factory
+        self.max_size = max_size
+        self.pool = []
+        self._lock = threading.Lock()
+        self.created_count = 0
+    
+    def acquire(self):
+        """Acquire a resource from the pool."""
+        with self._lock:
+            if self.pool:
+                return self.pool.pop()
+            elif self.created_count < self.max_size:
+                self.created_count += 1
+                return self.factory()
+            else:
+                # Pool exhausted, wait and retry
+                pass
+        
+        # If we get here, pool is exhausted
+        raise Exception("Resource pool exhausted")
+    
+    def release(self, resource):
+        """Release a resource back to the pool."""
+        with self._lock:
+            if len(self.pool) < self.max_size:
+                self.pool.append(resource)
+            else:
+                # Pool is full, discard resource
+                self.created_count -= 1
 
 
 @dataclass
@@ -48,11 +184,14 @@ class TableCleaner:
     
     def __init__(
         self,
-        llm_provider: str = "anthropic",
+        llm_provider: str = "local",
         confidence_threshold: float = 0.85,
         rules: Optional["RuleSet"] = None,
         enable_profiling: bool = True,
         max_fixes_per_column: int = 1000,
+        enable_monitoring: bool = True,
+        max_concurrent_operations: int = 4,
+        circuit_breaker_config: Optional[Dict[str, Any]] = None,
         **provider_kwargs
     ):
         """Initialize table cleaner.
@@ -63,6 +202,9 @@ class TableCleaner:
             rules: Custom cleaning rules
             enable_profiling: Whether to perform data profiling
             max_fixes_per_column: Maximum fixes to attempt per column
+            enable_monitoring: Whether to enable monitoring
+            max_concurrent_operations: Maximum concurrent operations
+            circuit_breaker_config: Optional circuit breaker configuration
             **provider_kwargs: Additional arguments for LLM provider
         """
         self.llm_provider_name = llm_provider
@@ -70,6 +212,20 @@ class TableCleaner:
         self.rules = rules
         self.enable_profiling = enable_profiling
         self.max_fixes_per_column = max_fixes_per_column
+        self.enable_monitoring = enable_monitoring
+        self.max_concurrent_operations = max_concurrent_operations
+        
+        # Initialize resilience components
+        cb_config = circuit_breaker_config or {}
+        self.circuit_breaker = CircuitBreaker(
+            failure_threshold=cb_config.get("failure_threshold", 5),
+            timeout=cb_config.get("timeout", 60)
+        )
+        
+        self.thread_pool = ThreadPoolExecutor(max_workers=max_concurrent_operations)
+        
+        # Initialize monitoring
+        self.monitor = get_global_monitor() if MONITORING_AVAILABLE and enable_monitoring else None
         
         # Initialize LLM provider
         self.llm_provider = get_provider(llm_provider, **provider_kwargs)
@@ -77,7 +233,8 @@ class TableCleaner:
         # Initialize profiler
         self.profiler = DataProfiler() if enable_profiling else None
         
-        logger.info(f"Initialized TableCleaner with {llm_provider} provider")
+        logger.info(f"Initialized TableCleaner with {llm_provider} provider, "
+                   f"monitoring: {enable_monitoring}, concurrent ops: {max_concurrent_operations}")
         
     def clean(
         self, 
