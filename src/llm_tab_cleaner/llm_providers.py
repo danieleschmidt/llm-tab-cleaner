@@ -7,9 +7,20 @@ import time
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 
-import requests
-from anthropic import Anthropic
-from openai import OpenAI
+try:
+    import requests
+except ImportError:
+    requests = None
+
+try:
+    from anthropic import Anthropic
+except ImportError:
+    Anthropic = None
+
+try:
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None
 
 
 logger = logging.getLogger(__name__)
@@ -65,6 +76,9 @@ class AnthropicProvider(LLMProvider):
             api_key: Anthropic API key (if None, uses ANTHROPIC_API_KEY env var)
             model: Model to use for cleaning
         """
+        if Anthropic is None:
+            raise ImportError("anthropic package not installed. Install with: pip install anthropic")
+            
         self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
         if not self.api_key:
             raise ValueError("ANTHROPIC_API_KEY environment variable or api_key parameter required")
@@ -214,6 +228,9 @@ class OpenAIProvider(LLMProvider):
             api_key: OpenAI API key (if None, uses OPENAI_API_KEY env var)
             model: Model to use for cleaning
         """
+        if OpenAI is None:
+            raise ImportError("openai package not installed. Install with: pip install openai")
+            
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY environment variable or api_key parameter required")

@@ -8,11 +8,16 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
-from sklearn.calibration import CalibratedClassifierCV
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.isotonic import IsotonicRegression
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import brier_score_loss, log_loss
+
+try:
+    from sklearn.calibration import CalibratedClassifierCV
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.isotonic import IsotonicRegression
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.metrics import brier_score_loss, log_loss
+    _SKLEARN_AVAILABLE = True
+except ImportError:
+    _SKLEARN_AVAILABLE = False
 
 
 logger = logging.getLogger(__name__)
@@ -44,6 +49,9 @@ class ConfidenceCalibrator:
             n_bins: Number of bins for calibration assessment
             save_path: Path to save/load calibration model
         """
+        if not _SKLEARN_AVAILABLE:
+            logger.warning("scikit-learn not available. Using basic confidence calibration.")
+        
         self.method = method
         self.n_bins = n_bins
         self.save_path = save_path

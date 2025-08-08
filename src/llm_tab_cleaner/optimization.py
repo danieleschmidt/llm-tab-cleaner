@@ -550,7 +550,10 @@ class MemoryOptimizer:
                 num_total_values = len(optimized_df[col])
                 
                 if num_unique_values / num_total_values < 0.5:  # Less than 50% unique
-                    optimized_df[col] = optimized_df[col].astype('category')
+                    try:
+                        optimized_df[col] = optimized_df[col].astype('category')
+                    except Exception as e:
+                        logger.warning(f"Could not convert {col} to category: {e}")
         
         # Log memory savings
         original_memory = df.memory_usage(deep=True).sum() / 1024 / 1024  # MB
