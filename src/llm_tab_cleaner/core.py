@@ -20,6 +20,14 @@ try:
 except ImportError:
     MONITORING_AVAILABLE = False
 
+try:
+    from .validation import get_global_validator, get_global_sanitizer
+    from .backup import get_global_backup_manager, AutoBackupWrapper
+    from .health import get_global_health_monitor
+    SECURITY_AVAILABLE = True
+except ImportError:
+    SECURITY_AVAILABLE = False
+
 
 logger = logging.getLogger(__name__)
 
@@ -192,6 +200,9 @@ class TableCleaner:
         enable_monitoring: bool = True,
         max_concurrent_operations: int = 4,
         circuit_breaker_config: Optional[Dict[str, Any]] = None,
+        enable_security: bool = True,
+        enable_backup: bool = True,
+        backup_dir: str = "./backups",
         **provider_kwargs
     ):
         """Initialize table cleaner.
@@ -205,6 +216,9 @@ class TableCleaner:
             enable_monitoring: Whether to enable monitoring
             max_concurrent_operations: Maximum concurrent operations
             circuit_breaker_config: Optional circuit breaker configuration
+            enable_security: Whether to enable security features
+            enable_backup: Whether to enable auto-backup
+            backup_dir: Directory for backups
             **provider_kwargs: Additional arguments for LLM provider
         """
         self.llm_provider_name = llm_provider
@@ -213,6 +227,8 @@ class TableCleaner:
         self.enable_profiling = enable_profiling
         self.max_fixes_per_column = max_fixes_per_column
         self.enable_monitoring = enable_monitoring
+        self.enable_security = enable_security
+        self.enable_backup = enable_backup
         self.max_concurrent_operations = max_concurrent_operations
         
         # Initialize resilience components
@@ -227,6 +243,24 @@ class TableCleaner:
         # Initialize monitoring
         self.monitor = get_global_monitor() if MONITORING_AVAILABLE and enable_monitoring else None
         
+        # Initialize security components
+        if SECURITY_AVAILABLE and enable_security:
+            self.validator = get_global_validator()
+            self.sanitizer = get_global_sanitizer()
+            self.health_monitor = get_global_health_monitor()
+        else:
+            self.validator = None
+            self.sanitizer = None
+            self.health_monitor = None
+        
+        # Initialize backup components
+        if SECURITY_AVAILABLE and enable_backup:
+            self.backup_manager = get_global_backup_manager(backup_dir)
+            self.auto_backup = AutoBackupWrapper(self.backup_manager)
+        else:
+            self.backup_manager = None
+            self.auto_backup = None
+        
         # Initialize LLM provider
         self.llm_provider = get_provider(llm_provider, **provider_kwargs)
         
@@ -234,7 +268,8 @@ class TableCleaner:
         self.profiler = DataProfiler() if enable_profiling else None
         
         logger.info(f"Initialized TableCleaner with {llm_provider} provider, "
-                   f"monitoring: {enable_monitoring}, concurrent ops: {max_concurrent_operations}")
+                   f"monitoring: {enable_monitoring}, security: {enable_security}, "
+                   f"backup: {enable_backup}, concurrent ops: {max_concurrent_operations}")
         
     def clean(
         self, 
@@ -255,75 +290,125 @@ class TableCleaner:
         start_time = time.time()
         logger.info(f"Starting cleaning process for DataFrame with {len(df)} rows, {len(df.columns)} columns")
         
-        # Create working copy
-        cleaned_df = df.copy()
-        fixes = []
-        audit_trail = []
+        # Input validation and sanitization
+        if self.validator and self.sanitizer:
+            validation_result = self.validator.validate_dataframe(df)
+            if not validation_result.is_valid:
+                logger.error(f"DataFrame validation failed: {validation_result.errors}")
+                raise ValueError(f"Invalid DataFrame: {validation_result.errors}")
+            
+            if validation_result.warnings:
+                logger.warning(f"DataFrame validation warnings: {validation_result.warnings}")
+            
+            # Sanitize the DataFrame
+            df, sanitization_warnings = self.sanitizer.sanitize_dataframe(df)
+            if sanitization_warnings:
+                logger.info(f"DataFrame sanitized: {sanitization_warnings}")
         
-        # Profile the data if enabled
-        profile_summary = None
-        if self.profiler:
-            logger.info("Profiling data for quality assessment")
-            table_profile = self.profiler.profile_table(df)
-            profile_summary = {
-                "overall_quality_score": table_profile.overall_quality_score,
-                "total_issues": table_profile.total_issues,
-                "duplicate_percentage": table_profile.duplicate_percentage,
-                "column_quality_scores": {
-                    col: profile.quality_score 
-                    for col, profile in table_profile.columns.items()
+        # Create backup before processing
+        backup_id = None
+        if self.auto_backup:
+            backup_id = self.auto_backup.backup_before_operation(df, "cleaning")
+            if backup_id:
+                logger.info(f"Created pre-cleaning backup: {backup_id}")
+        
+        # Check system health
+        if self.health_monitor:
+            try:
+                import asyncio
+                health = asyncio.run(self.health_monitor.run_checks())
+                if health.status == "unhealthy":
+                    logger.warning("System health check failed, proceeding with caution")
+                elif health.status == "warning":
+                    logger.info("System health warnings detected")
+            except Exception as e:
+                logger.warning(f"Health check failed: {e}")
+        
+        try:
+            # Create working copy
+            cleaned_df = df.copy()
+            fixes = []
+            audit_trail = []
+            
+            # Profile the data if enabled
+            profile_summary = None
+            if self.profiler:
+                logger.info("Profiling data for quality assessment")
+                table_profile = self.profiler.profile_table(df)
+                profile_summary = {
+                    "overall_quality_score": table_profile.overall_quality_score,
+                    "total_issues": table_profile.total_issues,
+                    "duplicate_percentage": table_profile.duplicate_percentage,
+                    "column_quality_scores": {
+                        col: profile.quality_score 
+                        for col, profile in table_profile.columns.items()
+                    }
                 }
-            }
-            logger.info(f"Data quality score: {table_profile.overall_quality_score:.2%}")
-        
-        # Determine columns to clean
-        target_columns = columns if columns is not None else df.columns.tolist()
-        
-        # Sample data if requested
-        if sample_rate < 1.0:
-            sample_size = int(len(df) * sample_rate)
-            sample_indices = df.sample(n=sample_size).index
-            logger.info(f"Sampling {sample_size} rows ({sample_rate:.1%}) for cleaning")
-        else:
-            sample_indices = df.index
-        
-        # Clean each column
-        for column in target_columns:
-            if column not in df.columns:
-                logger.warning(f"Column '{column}' not found in DataFrame, skipping")
-                continue
+                logger.info(f"Data quality score: {table_profile.overall_quality_score:.2%}")
+            
+            # Determine columns to clean
+            target_columns = columns if columns is not None else df.columns.tolist()
+            
+            # Sample data if requested
+            if sample_rate < 1.0:
+                sample_size = int(len(df) * sample_rate)
+                sample_indices = df.sample(n=sample_size).index
+                logger.info(f"Sampling {sample_size} rows ({sample_rate:.1%}) for cleaning")
+            else:
+                sample_indices = df.index
+            
+            # Clean each column
+            for column in target_columns:
+                if column not in df.columns:
+                    logger.warning(f"Column '{column}' not found in DataFrame, skipping")
+                    continue
+                    
+                logger.info(f"Cleaning column: {column}")
+                column_fixes, column_audit = self._clean_column(
+                    cleaned_df, column, sample_indices, table_profile.columns.get(column) if self.profiler else None
+                )
                 
-            logger.info(f"Cleaning column: {column}")
-            column_fixes, column_audit = self._clean_column(
-                cleaned_df, column, sample_indices, table_profile.columns.get(column) if self.profiler else None
+                fixes.extend(column_fixes)
+                audit_trail.extend(column_audit)
+                
+                # Apply fixes to the DataFrame
+                for fix in column_fixes:
+                    if fix.confidence >= self.confidence_threshold:
+                        cleaned_df.at[fix.row_index, fix.column] = fix.cleaned
+            
+            # Calculate final quality score
+            final_quality_score = self._calculate_quality_score(df, cleaned_df, fixes)
+            
+            processing_time = time.time() - start_time
+            
+            # Create cleaning report
+            report = CleaningReport(
+                total_fixes=len([f for f in fixes if f.confidence >= self.confidence_threshold]),
+                quality_score=final_quality_score,
+                fixes=fixes,
+                processing_time=processing_time,
+                profile_summary=profile_summary,
+                audit_trail=audit_trail
             )
             
-            fixes.extend(column_fixes)
-            audit_trail.extend(column_audit)
+            logger.info(f"Cleaning completed: {report.total_fixes} fixes applied in {processing_time:.2f}s")
             
-            # Apply fixes to the DataFrame
-            for fix in column_fixes:
-                if fix.confidence >= self.confidence_threshold:
-                    cleaned_df.at[fix.row_index, fix.column] = fix.cleaned
-        
-        # Calculate final quality score
-        final_quality_score = self._calculate_quality_score(df, cleaned_df, fixes)
-        
-        processing_time = time.time() - start_time
-        
-        # Create cleaning report
-        report = CleaningReport(
-            total_fixes=len([f for f in fixes if f.confidence >= self.confidence_threshold]),
-            quality_score=final_quality_score,
-            fixes=fixes,
-            processing_time=processing_time,
-            profile_summary=profile_summary,
-            audit_trail=audit_trail
-        )
-        
-        logger.info(f"Cleaning completed: {report.total_fixes} fixes applied in {processing_time:.2f}s")
-        
-        return cleaned_df, report
+            return cleaned_df, report
+            
+        except Exception as e:
+            logger.error(f"Cleaning process failed: {e}")
+            # Try to restore from backup if available
+            if backup_id and self.backup_manager:
+                try:
+                    logger.info(f"Attempting to restore from backup {backup_id}")
+                    restored_df = self.backup_manager.restore_backup(backup_id)
+                    logger.info("Successfully restored from backup")
+                    return restored_df, CleaningReport(0, 0.0, [], time.time() - start_time, audit_trail=[{"error": str(e)}])
+                except Exception as restore_error:
+                    logger.error(f"Backup restore also failed: {restore_error}")
+            
+            # Re-raise the original exception
+            raise
     
     def _clean_column(
         self, 

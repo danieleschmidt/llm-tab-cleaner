@@ -1,0 +1,450 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: llm-tab-cleaner
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-tab-cleaner-api
+  namespace: llm-tab-cleaner
+  labels:
+    app: llm-tab-cleaner-api
+    version: v0.3.0
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: llm-tab-cleaner-api
+  template:
+    metadata:
+      labels:
+        app: llm-tab-cleaner-api
+        version: v0.3.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: api
+        image: llm-tab-cleaner:v0.3.0
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: ENVIRONMENT
+          value: "production"
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: WORKERS
+          value: "4"
+        - name: MAX_CONCURRENT_OPERATIONS
+          value: "8"
+        - name: ENABLE_MONITORING
+          value: "true"
+        - name: ENABLE_SECURITY
+          value: "true"
+        - name: REDIS_URL
+          value: "redis://redis-service:6379/0"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: database-secret
+              key: url
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: llm-secrets
+              key: anthropic-key
+              optional: true
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: llm-secrets
+              key: openai-key
+              optional: true
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi" 
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/data
+        - name: cache-volume
+          mountPath: /app/cache
+        - name: config-volume
+          mountPath: /app/config
+          readOnly: true
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: llm-tab-cleaner-data-pvc
+      - name: cache-volume
+        emptyDir:
+          sizeLimit: 1Gi
+      - name: config-volume
+        configMap:
+          name: llm-tab-cleaner-config
+      imagePullPolicy: Always
+      restartPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-tab-cleaner-worker
+  namespace: llm-tab-cleaner
+  labels:
+    app: llm-tab-cleaner-worker
+    version: v0.3.0
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: llm-tab-cleaner-worker
+  template:
+    metadata:
+      labels:
+        app: llm-tab-cleaner-worker
+        version: v0.3.0
+    spec:
+      containers:
+      - name: worker
+        image: llm-tab-cleaner:v0.3.0
+        command: ["python", "-m", "celery", "worker", "-A", "llm_tab_cleaner.worker", "--loglevel=info", "--concurrency=4"]
+        env:
+        - name: ENVIRONMENT
+          value: "production"
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: CELERY_BROKER_URL
+          value: "redis://redis-service:6379/1"
+        - name: CELERY_RESULT_BACKEND
+          value: "redis://redis-service:6379/2"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: database-secret
+              key: url
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/data
+        - name: cache-volume
+          mountPath: /app/cache
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: llm-tab-cleaner-data-pvc
+      - name: cache-volume
+        emptyDir:
+          sizeLimit: 512Mi
+      imagePullPolicy: Always
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm-tab-cleaner-api-service
+  namespace: llm-tab-cleaner
+  labels:
+    app: llm-tab-cleaner-api
+spec:
+  selector:
+    app: llm-tab-cleaner-api
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8000
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: llm-tab-cleaner
+  labels:
+    app: redis
+spec:
+  selector:
+    app: redis
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: 6379
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: llm-tab-cleaner
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        volumeMounts:
+        - name: redis-storage
+          mountPath: /data
+        livenessProbe:
+          tcpSocket:
+            port: 6379
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: 6379
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: redis-storage
+        persistentVolumeClaim:
+          claimName: redis-data-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: llm-tab-cleaner-data-pvc
+  namespace: llm-tab-cleaner
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: fast-ssd
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-data-pvc
+  namespace: llm-tab-cleaner
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: fast-ssd
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: llm-tab-cleaner-config
+  namespace: llm-tab-cleaner
+data:
+  config.yaml: |
+    # LLM Tab Cleaner Configuration
+    cleaning:
+      confidence_threshold: 0.85
+      max_fixes_per_column: 1000
+      enable_profiling: true
+      enable_monitoring: true
+      enable_security: true
+      enable_backup: true
+      max_concurrent_operations: 8
+      
+    providers:
+      default: "local"
+      anthropic:
+        model: "claude-3-sonnet-20240229"
+        max_tokens: 4096
+        timeout: 30
+      openai:
+        model: "gpt-4"
+        max_tokens: 4096
+        timeout: 30
+      local:
+        model_path: "/app/models/local-model"
+        
+    caching:
+      type: "multi_level"
+      l1_size: 1000
+      l2_size: 5000
+      l3_size: 20000
+      enable_disk_cache: true
+      cache_dir: "/app/cache"
+      
+    performance:
+      monitoring_interval: 30
+      auto_optimization_threshold: 85
+      resource_limits:
+        max_memory_mb: 1500
+        max_cpu_percent: 80
+        
+    security:
+      enable_input_validation: true
+      enable_sanitization: true
+      enable_path_validation: true
+      max_string_length: 100000
+      
+    distributed:
+      enable_process_pool: false
+      chunk_size: 1000
+      max_workers: 8
+      load_balancer_strategy: "adaptive"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: database-secret
+  namespace: llm-tab-cleaner
+type: Opaque
+stringData:
+  url: "postgresql://postgres:password@postgres-service:5432/llm_tab_cleaner"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: llm-secrets
+  namespace: llm-tab-cleaner
+type: Opaque
+stringData:
+  anthropic-key: "YOUR_ANTHROPIC_API_KEY"
+  openai-key: "YOUR_OPENAI_API_KEY"
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: llm-tab-cleaner-ingress
+  namespace: llm-tab-cleaner
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+spec:
+  tls:
+  - hosts:
+    - api.llm-tab-cleaner.com
+    secretName: llm-tab-cleaner-tls
+  rules:
+  - host: api.llm-tab-cleaner.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: llm-tab-cleaner-api-service
+            port:
+              number: 80
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: llm-tab-cleaner-api-hpa
+  namespace: llm-tab-cleaner
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: llm-tab-cleaner-api
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: llm-tab-cleaner-worker-hpa
+  namespace: llm-tab-cleaner
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: llm-tab-cleaner-worker
+  minReplicas: 3
+  maxReplicas: 15
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 75
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 85
