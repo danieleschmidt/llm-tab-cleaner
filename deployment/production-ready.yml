@@ -1,0 +1,408 @@
+# Production-Ready LLM Tab Cleaner Deployment
+# Kubernetes manifests for enterprise deployment
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: llm-tab-cleaner-prod
+  labels:
+    app: llm-tab-cleaner
+    env: production
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: llm-tab-cleaner-config
+  namespace: llm-tab-cleaner-prod
+data:
+  config.yaml: |
+    # LLM Tab Cleaner Production Configuration
+    llm:
+      provider: "anthropic"
+      confidence_threshold: 0.85
+      max_retries: 3
+      timeout: 60
+    
+    security:
+      enable_encryption: true
+      enable_audit: true
+      max_data_size: 1000000
+      allowed_columns: null
+      privacy_techniques:
+        - "data_masking"
+        - "tokenization"
+    
+    performance:
+      max_workers: 8
+      batch_size: 5000
+      enable_caching: true
+      cache_size: 10000
+      enable_monitoring: true
+    
+    storage:
+      backup_enabled: true
+      backup_retention_days: 90
+      audit_retention_days: 365
+    
+    monitoring:
+      metrics_enabled: true
+      health_check_interval: 30
+      alert_thresholds:
+        error_rate: 0.05
+        response_time_p95: 5000
+        memory_usage: 0.8
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: llm-tab-cleaner-secrets
+  namespace: llm-tab-cleaner-prod
+type: Opaque
+data:
+  # Base64 encoded secrets - replace with actual values
+  anthropic-api-key: ""  # echo -n "your-api-key" | base64
+  openai-api-key: ""     # echo -n "your-api-key" | base64
+  encryption-key: ""     # echo -n "your-32-char-encryption-key" | base64
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-tab-cleaner-api
+  namespace: llm-tab-cleaner-prod
+  labels:
+    app: llm-tab-cleaner
+    component: api
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: llm-tab-cleaner
+      component: api
+  template:
+    metadata:
+      labels:
+        app: llm-tab-cleaner
+        component: api
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      
+      initContainers:
+      - name: migration
+        image: llm-tab-cleaner:latest
+        command: ["python", "-c", "print('Database migration placeholder')"]
+        env:
+        - name: PYTHONPATH
+          value: "/app/src"
+      
+      containers:
+      - name: api
+        image: llm-tab-cleaner:latest
+        imagePullPolicy: Always
+        
+        ports:
+        - containerPort: 8000
+          name: http
+        - containerPort: 8001
+          name: metrics
+        
+        env:
+        - name: PYTHONPATH
+          value: "/app/src"
+        - name: LLM_TAB_CLEANER_CONFIG
+          value: "/etc/config/config.yaml"
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: llm-tab-cleaner-secrets
+              key: anthropic-api-key
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: llm-tab-cleaner-secrets
+              key: openai-api-key
+        - name: ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: llm-tab-cleaner-secrets
+              key: encryption-key
+        
+        volumeMounts:
+        - name: config
+          mountPath: /etc/config
+          readOnly: true
+        - name: temp-storage
+          mountPath: /tmp
+        
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+      
+      volumes:
+      - name: config
+        configMap:
+          name: llm-tab-cleaner-config
+      - name: temp-storage
+        emptyDir:
+          sizeLimit: "1Gi"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm-tab-cleaner-api-service
+  namespace: llm-tab-cleaner-prod
+  labels:
+    app: llm-tab-cleaner
+    component: api
+spec:
+  selector:
+    app: llm-tab-cleaner
+    component: api
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+  - name: metrics
+    port: 8001
+    targetPort: 8001
+  type: ClusterIP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: llm-tab-cleaner-ingress
+  namespace: llm-tab-cleaner-prod
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+spec:
+  tls:
+  - hosts:
+    - api.llm-tab-cleaner.com
+    secretName: llm-tab-cleaner-tls
+  rules:
+  - host: api.llm-tab-cleaner.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: llm-tab-cleaner-api-service
+            port:
+              number: 8000
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: llm-tab-cleaner-hpa
+  namespace: llm-tab-cleaner-prod
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: llm-tab-cleaner-api
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: llm-tab-cleaner-backup
+  namespace: llm-tab-cleaner-prod
+spec:
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: backup
+            image: llm-tab-cleaner:latest
+            command: ["python", "-c", "print('Backup job placeholder')"]
+            env:
+            - name: PYTHONPATH
+              value: "/app/src"
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backups
+          restartPolicy: OnFailure
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: llm-tab-cleaner-backup-pvc
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: llm-tab-cleaner-backup-pvc
+  namespace: llm-tab-cleaner-prod
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: fast-ssd
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: llm-tab-cleaner-pdb
+  namespace: llm-tab-cleaner-prod
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: llm-tab-cleaner
+      component: api
+
+---
+apiVersion: v1
+kind: ServiceMonitor
+metadata:
+  name: llm-tab-cleaner-metrics
+  namespace: llm-tab-cleaner-prod
+  labels:
+    app: llm-tab-cleaner
+spec:
+  selector:
+    matchLabels:
+      app: llm-tab-cleaner
+      component: api
+  endpoints:
+  - port: metrics
+    path: /metrics
+    interval: 30s
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: llm-tab-cleaner-prod
+  name: llm-tab-cleaner-role
+rules:
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: llm-tab-cleaner-rolebinding
+  namespace: llm-tab-cleaner-prod
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: llm-tab-cleaner-prod
+roleRef:
+  kind: Role
+  name: llm-tab-cleaner-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: llm-tab-cleaner-netpol
+  namespace: llm-tab-cleaner-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: llm-tab-cleaner
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8000
+  egress:
+  - to: []  # Allow all egress for LLM API calls
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53

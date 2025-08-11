@@ -1,0 +1,90 @@
+# Production-optimized Dockerfile for LLM Tab Cleaner
+FROM python:3.12-slim AS base
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Create app user
+RUN groupadd -r app && useradd -r -g app app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Build stage
+FROM base AS builder
+
+WORKDIR /build
+
+# Copy requirements
+COPY pyproject.toml README.md ./
+COPY src/ src/
+
+# Install build dependencies and package
+RUN pip install --upgrade pip setuptools wheel build && \
+    python -m build && \
+    pip wheel --no-deps -w dist dist/*.whl
+
+# Production stage
+FROM base AS production
+
+WORKDIR /app
+
+# Install runtime dependencies
+COPY --from=builder /build/dist/*.whl /tmp/
+RUN pip install --no-cache-dir /tmp/*.whl && \
+    rm -f /tmp/*.whl
+
+# Copy application code
+COPY src/ src/
+COPY deployment/scripts/ scripts/
+
+# Create necessary directories
+RUN mkdir -p /app/logs /app/data /app/backups /tmp/llm-tab-cleaner && \
+    chown -R app:app /app /tmp/llm-tab-cleaner
+
+# Security hardening
+RUN chmod -R 755 /app && \
+    chmod -R 700 /app/logs /app/data /app/backups
+
+# Switch to app user
+USER app
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import sys; sys.path.insert(0, '/app/src'); from llm_tab_cleaner import get_version_info; print(get_version_info())" || exit 1
+
+# Expose ports
+EXPOSE 8000 8001
+
+# Default command
+CMD ["python", "-m", "llm_tab_cleaner.api", "--host", "0.0.0.0", "--port", "8000"]
+
+# Development stage (for testing)
+FROM production AS development
+
+USER root
+
+# Install development dependencies
+RUN pip install --no-cache-dir pytest pytest-cov pytest-mock black ruff mypy
+
+# Copy test files
+COPY tests/ tests/
+
+USER app
+
+CMD ["python", "-m", "pytest", "tests/", "-v"]
+
+# Labels for container metadata
+LABEL org.opencontainers.image.title="LLM Tab Cleaner" \
+      org.opencontainers.image.description="Production-ready LLM-powered data cleaning service" \
+      org.opencontainers.image.version="0.3.0" \
+      org.opencontainers.image.vendor="Terragon Labs" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.source="https://github.com/terragonlabs/llm-tab-cleaner"
