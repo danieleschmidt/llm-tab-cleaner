@@ -1,0 +1,59 @@
+{
+  "timestamp": 1755041266.1756864,
+  "project": "llm-tab-cleaner",
+  "version": "0.3.0",
+  "overall_passed": false,
+  "total_gates": 6,
+  "passed_gates": 5,
+  "average_score": 8.243223938949663,
+  "gates": [
+    {
+      "name": "Code Execution",
+      "passed": true,
+      "score": 10.0,
+      "details": "\u2705 Code imports and executes successfully\nBasic functionality test passed: 1 rows processed\nQuality score: 1.0\n",
+      "timestamp": 1755041238.515823,
+      "artifacts": {}
+    },
+    {
+      "name": "Test Coverage",
+      "passed": false,
+      "score": 1.4593436336979813,
+      "details": "\u274c Issues: Coverage 14.6% < 75%\nOutput: 6  77.42%   56->62, 120->110, 151-163, 167-168, 175->177, 186->185, 208->207, 242->241, 248->247, 259-260, 269, 271, 275, 283, 299, 303-307, 317-319, 354->357, 395-405, 418, 443, 447-468, 492-499, 503-506\n-----------------------------------------------------------------------------------------\nTOTAL                                         6729   5513   2138     30  14.59%\nCoverage JSON written to file coverage.json\n============================= 21 passed in 10.11s ==============================\n",
+      "timestamp": 1755041258.898398,
+      "artifacts": {}
+    },
+    {
+      "name": "Security Scan",
+      "passed": true,
+      "score": 10.0,
+      "details": "\u2705 No security vulnerabilities found\nSecurity features: 3\n\u2705 advanced_security.py implements security controls\n\u2705 validation.py implements security controls\n\u2705 security.py implements security controls",
+      "timestamp": 1755041258.940726,
+      "artifacts": {}
+    },
+    {
+      "name": "Performance Benchmarks",
+      "passed": true,
+      "score": 7.0,
+      "details": "\u2705 Performance test results:\nSize 100: 1.179s, 84.8 rows/sec\nSize 500: 1.183s, 422.6 rows/sec\nSize 1000: 1.169s, 855.4 rows/sec\nAverage throughput: 454.2 rows/sec\nMax time per 1000 rows: 11.795s\nPERFORMANCE: ACCEPTABLE\n",
+      "timestamp": 1755041266.167114,
+      "artifacts": {}
+    },
+    {
+      "name": "Code Quality",
+      "passed": true,
+      "score": 10.0,
+      "details": "\u2705 Code quality assessment:\n\u2705 __init__.py has docstrings\n\u2705 adaptive.py has docstrings\n\u2705 advanced_security.py has docstrings\n\u2705 auto_scaling.py has docstrings\n\u2705 backup.py has docstrings\n\u2705 benchmarks.py has docstrings\n\u2705 caching.py has docstrings\n\u2705 cleaning_rule.py has docstrings\n\u2705 cli.py has docstrings\n\u2705 compliance.py has docstrings\n\u2705 confidence.py has docstrings\n\u2705 core.py has docstrings\n\u2705 deployment.py has docstrings\n\u2705 distributed.py has docstrings\n\u2705 health.py has docstrings\n\u2705 i18n.py has docstrings\n\u2705 incremental.py has docstrings\n\u2705 llm_providers.py has docstrings\n\u2705 monitoring.py has docstrings\n\u2705 optimization.py has docstrings\n\u2705 profiler.py has docstrings\n\u2705 research.py has docstrings\n\u2705 security.py has docstrings\n\u2705 spark.py has docstrings\n\u2705 streaming.py has docstrings\n\u2705 validation.py has docstrings\n\u2705 multimodal_cleaning.py has docstrings\n\u2705 neural_confidence.py has docstrings\n\u2705 federated_learning.py has docstrings\n\u2705 adaptive_learning.py has docstrings\n\u2705 Total Python files: 30\n\u2705 Total lines of code: 15272\n\u2705 Modular architecture with 30 modules\n\u2705 Key components implemented: 5/5",
+      "timestamp": 1755041266.172865,
+      "artifacts": {}
+    },
+    {
+      "name": "Documentation",
+      "passed": true,
+      "score": 11.0,
+      "details": "\u2705 Documentation score: 11.0/10\n\u2705 README.md (9.6KB)\n\u2705 CHANGELOG.md (2.7KB)\n\u2705 ARCHITECTURE.md (9.5KB)\n\u2705 API_REFERENCE.md (17.6KB)\n\u2705 DEPLOYMENT_GUIDE.md (15.3KB)\n\u2705 SECURITY.md (2.6KB)\n\u2705 20 Python files have detailed docstrings",
+      "timestamp": 1755041266.1754837,
+      "artifacts": {}
+    }
+  ]
+}
