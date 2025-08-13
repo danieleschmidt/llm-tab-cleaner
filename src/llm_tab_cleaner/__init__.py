@@ -71,6 +71,33 @@ if _BENCHMARKS_AVAILABLE:
         "run_comprehensive_benchmark"
     ])
 
+# Research modules
+try:
+    from .neural_confidence import NeuralCalibrator, CalibrationMetrics, NeuralCalibrationConfig
+    from .federated_learning import FederatedDataQualityServer, FederatedDataQualityClient, FederatedConfig
+    from .multimodal_cleaning import MultiModalProcessor, MultiModalSample, ModalityType
+    from .adaptive_learning import AdaptiveLearningSystem, FeedbackSignal, AdaptationMetrics
+    _RESEARCH_AVAILABLE = True
+except ImportError:
+    _RESEARCH_AVAILABLE = False
+
+# Add research components if available
+if _RESEARCH_AVAILABLE:
+    __all__.extend([
+        "NeuralCalibrator",
+        "CalibrationMetrics", 
+        "NeuralCalibrationConfig",
+        "FederatedDataQualityServer",
+        "FederatedDataQualityClient",
+        "FederatedConfig",
+        "MultiModalProcessor",
+        "MultiModalSample",
+        "ModalityType",
+        "AdaptiveLearningSystem",
+        "FeedbackSignal",
+        "AdaptationMetrics"
+    ])
+
 
 def get_version_info():
     """Get detailed version and feature availability information."""
@@ -84,6 +111,11 @@ def get_version_info():
             "cleaning_rules": True,
             "spark_integration": _SPARK_AVAILABLE,
             "benchmarking": _BENCHMARKS_AVAILABLE,
-            "incremental_cleaning": True
+            "incremental_cleaning": True,
+            "research_modules": _RESEARCH_AVAILABLE,
+            "neural_confidence": _RESEARCH_AVAILABLE,
+            "federated_learning": _RESEARCH_AVAILABLE,
+            "multimodal_cleaning": _RESEARCH_AVAILABLE,
+            "adaptive_learning": _RESEARCH_AVAILABLE
         }
     }

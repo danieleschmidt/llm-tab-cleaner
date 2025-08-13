@@ -110,7 +110,7 @@ def mock_llm_response():
 @pytest.fixture
 def mock_llm_provider(mock_llm_response):
     """Mock LLM provider for testing."""
-    with patch('llm_tab_cleaner.core.LLMProvider') as mock:
+    with patch('llm_tab_cleaner.llm_providers.get_provider') as mock:
         instance = MagicMock()
         instance.complete.return_value = mock_llm_response
         instance.batch_complete.return_value = [mock_llm_response] * 5
