@@ -1,0 +1,86 @@
+{
+  "timestamp": "2025-08-14T04:03:13.479632",
+  "gates": {
+    "Functionality Tests": {
+      "status": "PASS",
+      "execution_time": 0.026967525482177734,
+      "details": null
+    },
+    "Performance Benchmarks": {
+      "status": "PASS",
+      "execution_time": 0.03875422477722168,
+      "details": null
+    },
+    "Security Validation": {
+      "status": "FAIL",
+      "execution_time": 0.013602018356323242,
+      "details": null
+    },
+    "Code Coverage": {
+      "status": "PASS",
+      "execution_time": 0.0001742839813232422,
+      "details": null
+    },
+    "Data Quality": {
+      "status": "PASS",
+      "execution_time": 0.020267486572265625,
+      "details": null
+    },
+    "Resource Usage": {
+      "status": "PASS",
+      "execution_time": 0.06861710548400879,
+      "details": null
+    },
+    "Error Handling": {
+      "status": "PASS",
+      "execution_time": 0.011273384094238281,
+      "details": null
+    },
+    "Integration Tests": {
+      "status": "PASS",
+      "execution_time": 0.030099868774414062,
+      "details": null
+    }
+  },
+  "overall_status": "GOOD",
+  "performance_metrics": {
+    "small_dataset_time_ms": 13.359308242797852,
+    "medium_dataset_time_ms": 23.544788360595703,
+    "throughput_rows_per_second": 42472.244162261784
+  },
+  "security_findings": {
+    "input_validation": false,
+    "sql_injection_protection": false,
+    "data_sanitization": true,
+    "safe_file_handling": true
+  },
+  "test_coverage": {
+    "modules": {
+      "core.py": 86.958937256061,
+      "cleaning_rule.py": 87.56370601266066,
+      "confidence.py": 92.67779892434483,
+      "incremental.py": 87.79716999568676,
+      "profiler.py": 85.16601111799056,
+      "llm_providers.py": 88.02803339749097
+    },
+    "average": 88.03194278403913,
+    "threshold": 85.0
+  },
+  "data_quality": {
+    "initial_quality": 0.88,
+    "final_quality": 0.8,
+    "improvement": -0.07999999999999996,
+    "threshold": 0.8
+  },
+  "resource_usage": {
+    "initial_memory_mb": 159.671875,
+    "final_memory_mb": 161.5078125,
+    "memory_increase_mb": 1.8359375,
+    "dataset_size": 5000
+  },
+  "summary": {
+    "passed_gates": 7,
+    "total_gates": 8,
+    "success_rate": 87.5
+  }
+}
