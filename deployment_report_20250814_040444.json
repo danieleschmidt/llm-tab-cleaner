@@ -1,0 +1,134 @@
+{
+  "timestamp": "2025-08-14T04:04:44.371538",
+  "version_info": {
+    "version": "0.3.0",
+    "features": {
+      "core_cleaning": true,
+      "llm_providers": true,
+      "data_profiling": true,
+      "confidence_calibration": true,
+      "cleaning_rules": true,
+      "spark_integration": true,
+      "benchmarking": true,
+      "incremental_cleaning": true,
+      "research_modules": true,
+      "neural_confidence": true,
+      "federated_learning": true,
+      "multimodal_cleaning": true,
+      "adaptive_learning": true
+    }
+  },
+  "deployment_checks": {
+    "Package Installation": {
+      "status": "PASS",
+      "score": 100,
+      "details": "All core modules imported successfully. Version: 0.3.0",
+      "recommendations": [],
+      "execution_time": 1.430511474609375e-05
+    },
+    "Core Functionality": {
+      "status": "PASS",
+      "score": 90,
+      "details": "Core functionality test completed with 90% success",
+      "recommendations": [],
+      "execution_time": 0.01799321174621582
+    },
+    "Configuration Management": {
+      "status": "PASS",
+      "score": 80,
+      "details": "Configuration management validated",
+      "recommendations": [],
+      "execution_time": 0.0003247261047363281
+    },
+    "Environment Variables": {
+      "status": "FAIL",
+      "score": 60,
+      "details": "Environment configuration score: 60%",
+      "recommendations": [
+        "Set recommended environment variables: CONFIDENCE_THRESHOLD, MAX_BATCH_SIZE, LOG_LEVEL, CACHE_TTL_SECONDS"
+      ],
+      "execution_time": 3.647804260253906e-05
+    },
+    "Resource Requirements": {
+      "status": "FAIL",
+      "score": 60,
+      "details": "CPU: 2 cores, RAM: 3.8GB, Disk: 23.5GB",
+      "recommendations": [
+        "Recommend at least 4GB RAM for production"
+      ],
+      "execution_time": 0.00028634071350097656
+    },
+    "Security Configuration": {
+      "status": "FAIL",
+      "score": 65,
+      "details": "Security configuration validated",
+      "recommendations": [
+        "Security validation module not available",
+        "Data validation module not available",
+        "Backup management not available"
+      ],
+      "execution_time": 0.1296842098236084
+    },
+    "Monitoring Setup": {
+      "status": "PASS",
+      "score": 80,
+      "details": "Monitoring setup validated",
+      "recommendations": [
+        "Monitoring module not available"
+      ],
+      "execution_time": 0.008499622344970703
+    },
+    "Backup Strategy": {
+      "status": "PASS",
+      "score": 75,
+      "details": "Backup strategy reviewed",
+      "recommendations": [
+        "Backup module not available",
+        "Implement regular data backups",
+        "Test recovery procedures",
+        "Set up offsite backup storage"
+      ],
+      "execution_time": 0.0006999969482421875
+    },
+    "Load Testing Readiness": {
+      "status": "PASS",
+      "score": 85,
+      "details": "Load testing readiness assessed",
+      "recommendations": [
+        "Conduct comprehensive load testing",
+        "Test with realistic data volumes",
+        "Validate auto-scaling behavior"
+      ],
+      "execution_time": 0.018524646759033203
+    },
+    "Documentation Completeness": {
+      "status": "PASS",
+      "score": 90,
+      "details": "Documentation completeness validated",
+      "recommendations": [],
+      "execution_time": 0.00031304359436035156
+    },
+    "Container Readiness": {
+      "status": "PASS",
+      "score": 120,
+      "details": "Container readiness assessed",
+      "recommendations": [],
+      "execution_time": 6.341934204101562e-05
+    },
+    "Multi-Region Support": {
+      "status": "PASS",
+      "score": 85,
+      "details": "Multi-region readiness validated",
+      "recommendations": [
+        "Internationalization module not available",
+        "Test deployment in multiple regions",
+        "Validate data compliance (GDPR, CCPA)",
+        "Configure CDN for global performance"
+      ],
+      "execution_time": 0.00402379035949707
+    }
+  },
+  "deployment_status": "NEEDS_MINOR_FIXES",
+  "production_readiness_score": 75.0,
+  "recommendations": []
+}
