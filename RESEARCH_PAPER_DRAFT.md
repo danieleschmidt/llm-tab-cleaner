@@ -1,6 +1,6 @@
 # Three Novel Breakthroughs in LLM-Powered Data Cleaning: Meta-Learning Routing, Cross-Modal Calibration, and Federated Quality Learning
 
-**Authors:** Terry (Terragon Labs)  
+**Authors:** Daniel Schmidt 
 **Submitted to:** VLDB 2025 / ICML 2025  
 **Keywords:** LLM data cleaning, meta-learning, confidence calibration, federated learning, data quality
 
