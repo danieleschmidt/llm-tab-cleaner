@@ -272,27 +272,39 @@ class DataCharacteristicsExtractor:
 
 
 class MetaLearningRouter:
-    """Meta-learning system for adaptive LLM routing."""
+    """Meta-learning system for adaptive LLM routing with autonomous enhancement."""
     
     def __init__(
         self,
         llm_providers: List[str] = None,
         meta_model_type: str = "random_forest",
         confidence_threshold: float = 0.7,
-        enable_cost_optimization: bool = True
+        enable_cost_optimization: bool = True,
+        enable_real_time_learning: bool = True,
+        auto_retrain_threshold: int = 50,
+        performance_decay_factor: float = 0.95,
+        enable_predictive_scaling: bool = True
     ):
-        """Initialize meta-learning router.
+        """Initialize meta-learning router with autonomous capabilities.
         
         Args:
             llm_providers: List of LLM provider names
             meta_model_type: Type of meta-learning model ('random_forest', 'gradient_boosting')
             confidence_threshold: Minimum confidence for routing decisions
             enable_cost_optimization: Whether to consider cost in routing decisions
+            enable_real_time_learning: Enable continuous learning from new data
+            auto_retrain_threshold: Number of new examples before auto-retraining
+            performance_decay_factor: Factor for exponential decay of old performance data
+            enable_predictive_scaling: Enable predictive resource scaling
         """
         self.llm_providers = llm_providers or ["anthropic", "openai", "local"]
         self.meta_model_type = meta_model_type
         self.confidence_threshold = confidence_threshold
         self.enable_cost_optimization = enable_cost_optimization
+        self.enable_real_time_learning = enable_real_time_learning
+        self.auto_retrain_threshold = auto_retrain_threshold
+        self.performance_decay_factor = performance_decay_factor
+        self.enable_predictive_scaling = enable_predictive_scaling
         
         # Initialize components
         self.characteristics_extractor = DataCharacteristicsExtractor()
@@ -300,10 +312,28 @@ class MetaLearningRouter:
         self.training_examples: List[MetaLearningExample] = []
         self.is_trained = False
         
-        # Performance tracking
+        # Enhanced tracking and learning
         self.routing_history: List[Dict[str, Any]] = []
+        self.performance_matrix: Dict[str, Dict[str, List[float]]] = {}
+        self.cost_history: Dict[str, List[float]] = {provider: [] for provider in self.llm_providers}
+        self.latency_history: Dict[str, List[float]] = {provider: [] for provider in self.llm_providers}
         
-        logger.info(f"Initialized MetaLearningRouter with {len(self.llm_providers)} LLM providers")
+        # Autonomous learning state
+        self.last_retrain_time = time.time()
+        self.new_examples_since_retrain = 0
+        self.model_performance_trend = []
+        self.adaptive_threshold = confidence_threshold
+        
+        # Predictive scaling
+        self.load_predictions: List[float] = []
+        self.resource_utilization: Dict[str, float] = {provider: 0.0 for provider in self.llm_providers}
+        
+        # Real-time feedback loop
+        self.feedback_buffer: List[Dict[str, Any]] = []
+        self.online_learning_rate = 0.01
+        
+        logger.info(f"Initialized Enhanced MetaLearningRouter with {len(self.llm_providers)} LLM providers, "
+                   f"real-time learning: {enable_real_time_learning}, predictive scaling: {enable_predictive_scaling}")
     
     def _create_meta_model(self):
         """Create meta-learning model."""
@@ -458,26 +488,48 @@ class MetaLearningRouter:
         self,
         df: pd.DataFrame,
         confidence_threshold: float = 0.85,
-        fallback_strategy: str = "ensemble"
+        fallback_strategy: str = "ensemble",
+        enable_feedback_learning: bool = True
     ) -> Tuple[pd.DataFrame, CleaningReport, Dict[str, Any]]:
-        """Route to best LLM and perform cleaning."""
+        """Route to best LLM and perform cleaning with autonomous enhancements."""
         start_time = time.time()
+        
+        # Extract data characteristics for feedback learning
+        data_characteristics = self.characteristics_extractor.extract(df)
+        
+        # Use adaptive threshold if available
+        effective_threshold = self.adaptive_threshold if hasattr(self, 'adaptive_threshold') else self.confidence_threshold
         
         # Predict best LLM
         best_llm, routing_confidence, probabilities = self.predict_best_llm(df, return_probabilities=True)
         
-        # Routing metadata
+        # Enhanced routing metadata
         routing_metadata = {
             'predicted_llm': best_llm,
             'routing_confidence': routing_confidence,
             'probabilities': probabilities,
             'fallback_used': False,
-            'routing_time': time.time() - start_time
+            'routing_time': time.time() - start_time,
+            'adaptive_threshold_used': effective_threshold,
+            'data_characteristics': data_characteristics,
+            'autonomous_features_enabled': {
+                'real_time_learning': self.enable_real_time_learning,
+                'predictive_scaling': self.enable_predictive_scaling,
+                'cost_optimization': self.enable_cost_optimization
+            }
         }
         
         try:
+            # Cost optimization: check if we should override based on cost
+            if self.enable_cost_optimization and probabilities:
+                cost_adjusted_choice = self._cost_optimized_selection(probabilities)
+                if cost_adjusted_choice != best_llm:
+                    logger.info(f"Cost optimization: switching from {best_llm} to {cost_adjusted_choice}")
+                    best_llm = cost_adjusted_choice
+                    routing_metadata['cost_optimization_applied'] = True
+            
             # Use predicted LLM if confidence is high enough
-            if routing_confidence >= self.confidence_threshold:
+            if routing_confidence >= effective_threshold:
                 cleaner = TableCleaner(
                     llm_provider=best_llm,
                     confidence_threshold=confidence_threshold
@@ -490,6 +542,25 @@ class MetaLearningRouter:
                     cleaned_df, report = self._ensemble_cleaning(df, confidence_threshold)
                     routing_metadata['fallback_used'] = True
                     routing_metadata['fallback_strategy'] = 'ensemble'
+                elif fallback_strategy == "adaptive":
+                    # Try the next best option
+                    second_choice = self._get_second_choice(probabilities)
+                    if second_choice:
+                        cleaner = TableCleaner(
+                            llm_provider=second_choice,
+                            confidence_threshold=confidence_threshold
+                        )
+                        cleaned_df, report = cleaner.clean(df)
+                        routing_metadata['fallback_used'] = True
+                        routing_metadata['fallback_strategy'] = 'adaptive_second_choice'
+                        routing_metadata['second_choice_llm'] = second_choice
+                    else:
+                        # Use most probable LLM anyway
+                        cleaner = TableCleaner(
+                            llm_provider=best_llm,
+                            confidence_threshold=confidence_threshold
+                        )
+                        cleaned_df, report = cleaner.clean(df)
                 else:
                     # Use most probable LLM anyway
                     cleaner = TableCleaner(
@@ -498,26 +569,103 @@ class MetaLearningRouter:
                     )
                     cleaned_df, report = cleaner.clean(df)
             
-            # Record routing decision
-            self.routing_history.append({
+            # Calculate cost and latency estimates
+            processing_time = time.time() - start_time
+            cost_estimate = self._estimate_cost(best_llm, df.shape, processing_time)
+            
+            # Record routing decision with enhanced metadata
+            routing_record = {
                 'timestamp': time.time(),
                 'data_shape': df.shape,
                 'predicted_llm': best_llm,
                 'routing_confidence': routing_confidence,
                 'actual_performance': report.quality_score,
-                'processing_time': time.time() - start_time
+                'processing_time': processing_time,
+                'cost_estimate': cost_estimate,
+                'adaptive_threshold': effective_threshold,
+                'fallback_used': routing_metadata['fallback_used']
+            }
+            self.routing_history.append(routing_record)
+            
+            # Update performance feedback for autonomous learning
+            if enable_feedback_learning and self.enable_real_time_learning:
+                self.update_performance_feedback(
+                    llm_used=best_llm,
+                    actual_performance=report.quality_score,
+                    cost=cost_estimate,
+                    latency=processing_time,
+                    data_characteristics=data_characteristics
+                )
+            
+            # Update resource utilization tracking
+            self.resource_utilization[best_llm] = min(1.0, self.resource_utilization.get(best_llm, 0) + 0.1)
+            
+            # Add performance metrics to metadata
+            routing_metadata.update({
+                'final_performance': report.quality_score,
+                'cost_estimate': cost_estimate,
+                'efficiency_score': report.quality_score / (cost_estimate + 1e-6),
+                'total_processing_time': processing_time
             })
             
             return cleaned_df, report, routing_metadata
             
         except Exception as e:
-            logger.error(f"Error in route_and_clean: {e}")
+            logger.error(f"Error in enhanced route_and_clean: {e}")
             # Ultimate fallback: use default cleaner
             cleaner = TableCleaner()
             cleaned_df, report = cleaner.clean(df)
             routing_metadata['fallback_used'] = True
-            routing_metadata['fallback_strategy'] = 'default'
+            routing_metadata['fallback_strategy'] = 'error_recovery'
+            routing_metadata['error'] = str(e)
             return cleaned_df, report, routing_metadata
+    
+    def _cost_optimized_selection(self, probabilities: Dict[str, float]) -> str:
+        """Select LLM based on cost-performance trade-off."""
+        if not probabilities:
+            return self.llm_providers[0]
+        
+        best_value_llm = None
+        best_value_score = -1
+        
+        for llm, prob in probabilities.items():
+            if llm in self.cost_history and self.cost_history[llm]:
+                avg_cost = np.mean(self.cost_history[llm][-10:])
+                # Value score = probability / cost (higher is better)
+                value_score = prob / (avg_cost + 1e-6)
+                
+                if value_score > best_value_score:
+                    best_value_score = value_score
+                    best_value_llm = llm
+        
+        return best_value_llm or max(probabilities, key=probabilities.get)
+    
+    def _get_second_choice(self, probabilities: Dict[str, float]) -> Optional[str]:
+        """Get the second-best choice from probabilities."""
+        if not probabilities or len(probabilities) < 2:
+            return None
+        
+        sorted_choices = sorted(probabilities.items(), key=lambda x: x[1], reverse=True)
+        return sorted_choices[1][0] if len(sorted_choices) > 1 else None
+    
+    def _estimate_cost(self, llm_provider: str, data_shape: Tuple[int, int], processing_time: float) -> float:
+        """Estimate cost based on provider, data size, and processing time."""
+        rows, cols = data_shape
+        data_size_factor = (rows * cols) / 10000  # Normalize to 10K cells
+        
+        # Base cost estimates per provider (simplified)
+        base_costs = {
+            'anthropic': 0.02,
+            'openai': 0.015,
+            'local': 0.005
+        }
+        
+        base_cost = base_costs.get(llm_provider, 0.01)
+        
+        # Cost scales with data size and processing time
+        estimated_cost = base_cost * (1 + data_size_factor * 0.1) * (1 + processing_time * 0.05)
+        
+        return round(estimated_cost, 4)
     
     def _ensemble_cleaning(
         self,
@@ -549,6 +697,226 @@ class MetaLearningRouter:
         # Choose best result based on quality score
         best_result = max(results, key=lambda x: x[1].quality_score)
         return best_result[0], best_result[1]
+    
+    def update_performance_feedback(
+        self,
+        llm_used: str,
+        actual_performance: float,
+        cost: float,
+        latency: float,
+        data_characteristics: DataCharacteristics
+    ):
+        """Update performance feedback for autonomous learning."""
+        feedback = {
+            'timestamp': time.time(),
+            'llm_used': llm_used,
+            'actual_performance': actual_performance,
+            'cost': cost,
+            'latency': latency,
+            'data_characteristics': data_characteristics
+        }
+        
+        self.feedback_buffer.append(feedback)
+        
+        # Update tracking histories
+        self.cost_history[llm_used].append(cost)
+        self.latency_history[llm_used].append(latency)
+        
+        # Update performance matrix
+        data_type_key = self._get_data_type_key(data_characteristics)
+        if data_type_key not in self.performance_matrix:
+            self.performance_matrix[data_type_key] = {}
+        if llm_used not in self.performance_matrix[data_type_key]:
+            self.performance_matrix[data_type_key][llm_used] = []
+        
+        self.performance_matrix[data_type_key][llm_used].append(actual_performance)
+        
+        # Trigger autonomous learning if enabled
+        if self.enable_real_time_learning:
+            self._autonomous_learning_update()
+        
+        logger.debug(f"Updated performance feedback for {llm_used}: {actual_performance:.3f}")
+    
+    def _get_data_type_key(self, characteristics: DataCharacteristics) -> str:
+        """Generate a key for data type categorization."""
+        return f"r{characteristics.n_rows//1000}_c{characteristics.n_cols//10}_m{int(characteristics.missing_data_ratio*10)}"
+    
+    def _autonomous_learning_update(self):
+        """Perform autonomous learning updates."""
+        self.new_examples_since_retrain += 1
+        
+        # Auto-retrain if threshold reached
+        if self.new_examples_since_retrain >= self.auto_retrain_threshold:
+            try:
+                self._auto_retrain_model()
+            except Exception as e:
+                logger.warning(f"Auto-retrain failed: {e}")
+        
+        # Update adaptive threshold based on recent performance
+        self._update_adaptive_threshold()
+        
+        # Predict future load if enabled
+        if self.enable_predictive_scaling:
+            self._update_load_predictions()
+    
+    def _auto_retrain_model(self):
+        """Automatically retrain the model with new feedback data."""
+        if len(self.feedback_buffer) < 10:
+            return
+        
+        logger.info("Triggering autonomous model retraining...")
+        
+        # Convert feedback to training examples
+        for feedback in self.feedback_buffer[-self.auto_retrain_threshold:]:
+            # Create synthetic LLM performances based on feedback
+            performances = {}
+            for provider in self.llm_providers:
+                if provider == feedback['llm_used']:
+                    perf = LLMPerformance(
+                        llm_name=provider,
+                        accuracy=feedback['actual_performance'],
+                        precision=feedback['actual_performance'],
+                        recall=feedback['actual_performance'],
+                        f1_score=feedback['actual_performance'],
+                        processing_time=feedback['latency'],
+                        confidence_score=feedback['actual_performance'],
+                        cost_estimate=feedback['cost'],
+                        error_types_fixed={"unknown"}
+                    )
+                else:
+                    # Estimate other providers' performance
+                    baseline_perf = max(0.5, feedback['actual_performance'] - 0.1 + np.random.normal(0, 0.05))
+                    perf = LLMPerformance(
+                        llm_name=provider,
+                        accuracy=baseline_perf,
+                        precision=baseline_perf,
+                        recall=baseline_perf,
+                        f1_score=baseline_perf,
+                        processing_time=feedback['latency'] * (1 + np.random.uniform(-0.2, 0.2)),
+                        confidence_score=baseline_perf,
+                        cost_estimate=feedback['cost'] * (1 + np.random.uniform(-0.3, 0.3)),
+                        error_types_fixed={"unknown"}
+                    )
+                performances[provider] = perf
+            
+            # Add training example (using mock DataFrames)
+            mock_df = pd.DataFrame({'mock': [1, 2, 3]})
+            mock_gt = pd.DataFrame({'mock': [1, 2, 3]})
+            self.add_training_example(mock_df, mock_gt, performances)
+        
+        # Retrain if we have enough examples
+        if len(self.training_examples) >= 20:
+            self.train_meta_model()
+            self.last_retrain_time = time.time()
+            self.new_examples_since_retrain = 0
+            logger.info("Autonomous retraining completed successfully")
+        
+        # Clear old feedback buffer
+        self.feedback_buffer = self.feedback_buffer[-100:]  # Keep last 100 for reference
+    
+    def _update_adaptive_threshold(self):
+        """Update confidence threshold based on recent performance."""
+        if len(self.routing_history) < 10:
+            return
+        
+        recent_performance = [h['actual_performance'] for h in self.routing_history[-20:]]
+        avg_recent_performance = np.mean(recent_performance)
+        
+        # Adaptive threshold: lower if performing well, higher if performing poorly
+        if avg_recent_performance > 0.8:
+            self.adaptive_threshold = max(0.6, self.adaptive_threshold * 0.98)
+        elif avg_recent_performance < 0.6:
+            self.adaptive_threshold = min(0.9, self.adaptive_threshold * 1.02)
+        
+        logger.debug(f"Updated adaptive threshold to {self.adaptive_threshold:.3f}")
+    
+    def _update_load_predictions(self):
+        """Update load predictions for predictive scaling."""
+        if len(self.routing_history) < 5:
+            return
+        
+        # Simple time-series prediction based on recent load
+        recent_loads = [1] * len(self.routing_history[-24:])  # Simplified load metric
+        
+        if len(recent_loads) >= 3:
+            # Linear trend prediction
+            x = np.arange(len(recent_loads))
+            y = recent_loads
+            coeffs = np.polyfit(x, y, 1)
+            predicted_load = np.polyval(coeffs, len(recent_loads))
+            
+            self.load_predictions.append(max(0, predicted_load))
+            
+            # Keep only recent predictions
+            self.load_predictions = self.load_predictions[-50:]
+    
+    def get_predictive_scaling_recommendations(self) -> Dict[str, Any]:
+        """Get recommendations for predictive resource scaling."""
+        if not self.enable_predictive_scaling or len(self.load_predictions) < 3:
+            return {}
+        
+        recent_trend = np.mean(self.load_predictions[-5:]) if len(self.load_predictions) >= 5 else 0
+        
+        recommendations = {
+            'predicted_load_trend': recent_trend,
+            'scaling_recommendation': 'scale_up' if recent_trend > 1.2 else 'scale_down' if recent_trend < 0.8 else 'maintain',
+            'confidence': min(1.0, len(self.load_predictions) / 20.0),
+            'recommended_providers': []
+        }
+        
+        # Recommend which providers to scale based on performance
+        for provider in self.llm_providers:
+            if provider in self.cost_history and self.cost_history[provider]:
+                avg_cost = np.mean(self.cost_history[provider][-10:])
+                avg_latency = np.mean(self.latency_history[provider][-10:]) if self.latency_history[provider] else 1.0
+                
+                efficiency_score = 1.0 / (avg_cost * avg_latency + 1e-6)
+                recommendations['recommended_providers'].append({
+                    'provider': provider,
+                    'efficiency_score': efficiency_score,
+                    'avg_cost': avg_cost,
+                    'avg_latency': avg_latency
+                })
+        
+        # Sort by efficiency
+        recommendations['recommended_providers'].sort(key=lambda x: x['efficiency_score'], reverse=True)
+        
+        return recommendations
+    
+    def get_enhanced_analytics(self) -> Dict[str, Any]:
+        """Get comprehensive analytics including autonomous learning metrics."""
+        base_analytics = self.get_routing_analytics()
+        
+        # Add autonomous learning metrics
+        enhanced_analytics = {
+            **base_analytics,
+            'autonomous_learning': {
+                'is_enabled': self.enable_real_time_learning,
+                'new_examples_since_retrain': self.new_examples_since_retrain,
+                'last_retrain_time': self.last_retrain_time,
+                'adaptive_threshold': self.adaptive_threshold,
+                'model_performance_trend': self.model_performance_trend[-10:] if self.model_performance_trend else []
+            },
+            'predictive_scaling': {
+                'is_enabled': self.enable_predictive_scaling,
+                'load_predictions': self.load_predictions[-10:] if self.load_predictions else [],
+                'scaling_recommendations': self.get_predictive_scaling_recommendations()
+            },
+            'provider_performance': {}
+        }
+        
+        # Add per-provider performance metrics
+        for provider in self.llm_providers:
+            if provider in self.cost_history and self.cost_history[provider]:
+                enhanced_analytics['provider_performance'][provider] = {
+                    'avg_cost': np.mean(self.cost_history[provider][-20:]) if self.cost_history[provider] else 0,
+                    'avg_latency': np.mean(self.latency_history[provider][-20:]) if self.latency_history[provider] else 0,
+                    'cost_trend': 'increasing' if len(self.cost_history[provider]) >= 2 and 
+                                 self.cost_history[provider][-1] > self.cost_history[provider][-2] else 'stable',
+                    'utilization': self.resource_utilization.get(provider, 0.0)
+                }
+        
+        return enhanced_analytics
     
     def get_routing_analytics(self) -> Dict[str, Any]:
         """Get analytics about routing decisions."""

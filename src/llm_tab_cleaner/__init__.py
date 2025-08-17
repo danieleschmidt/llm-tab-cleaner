@@ -81,6 +81,21 @@ try:
 except ImportError:
     _RESEARCH_AVAILABLE = False
 
+# Autonomous production system modules
+try:
+    from .adaptive_meta_routing import MetaLearningRouter, DataCharacteristics
+    from .autonomous_monitoring import AutonomousMonitor, initialize_monitoring
+    from .self_healing_coordinator import SelfHealingCoordinator, initialize_self_healing
+    from .intelligent_autoscaling import IntelligentAutoScaler, initialize_autoscaling
+    from .ml_quality_gates import MLQualityGateValidator, QualityGateConfig, initialize_quality_gates
+    from .autonomous_production_system import (
+        AutonomousProductionSystem, ProductionConfig, initialize_production_system,
+        SystemState, OperationMode
+    )
+    _AUTONOMOUS_AVAILABLE = True
+except ImportError:
+    _AUTONOMOUS_AVAILABLE = False
+
 # Add research components if available
 if _RESEARCH_AVAILABLE:
     __all__.extend([
@@ -96,6 +111,27 @@ if _RESEARCH_AVAILABLE:
         "AdaptiveLearningSystem",
         "FeedbackSignal",
         "AdaptationMetrics"
+    ])
+
+# Add autonomous system components if available
+if _AUTONOMOUS_AVAILABLE:
+    __all__.extend([
+        "MetaLearningRouter",
+        "DataCharacteristics",
+        "AutonomousMonitor",
+        "initialize_monitoring",
+        "SelfHealingCoordinator", 
+        "initialize_self_healing",
+        "IntelligentAutoScaler",
+        "initialize_autoscaling",
+        "MLQualityGateValidator",
+        "QualityGateConfig",
+        "initialize_quality_gates",
+        "AutonomousProductionSystem",
+        "ProductionConfig",
+        "initialize_production_system",
+        "SystemState",
+        "OperationMode"
     ])
 
 
@@ -116,6 +152,12 @@ def get_version_info():
             "neural_confidence": _RESEARCH_AVAILABLE,
             "federated_learning": _RESEARCH_AVAILABLE,
             "multimodal_cleaning": _RESEARCH_AVAILABLE,
-            "adaptive_learning": _RESEARCH_AVAILABLE
+            "adaptive_learning": _RESEARCH_AVAILABLE,
+            "autonomous_production": _AUTONOMOUS_AVAILABLE,
+            "adaptive_meta_routing": _AUTONOMOUS_AVAILABLE,
+            "autonomous_monitoring": _AUTONOMOUS_AVAILABLE,
+            "self_healing": _AUTONOMOUS_AVAILABLE,
+            "intelligent_autoscaling": _AUTONOMOUS_AVAILABLE,
+            "ml_quality_gates": _AUTONOMOUS_AVAILABLE
         }
     }
