@@ -1,0 +1,76 @@
+# Global code ownership for LLM Tab Cleaner
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default global owners
+* @danieleschmidt
+
+# Core Architecture & Framework
+/src/llm_tab_cleaner/core.py @danieleschmidt
+/src/llm_tab_cleaner/llm_providers.py @danieleschmidt
+/src/llm_tab_cleaner/cleaning_rule.py @danieleschmidt
+/src/llm_tab_cleaner/confidence.py @danieleschmidt
+
+# Security & Compliance
+/src/llm_tab_cleaner/security.py @danieleschmidt
+/src/llm_tab_cleaner/advanced_security.py @danieleschmidt
+/src/llm_tab_cleaner/compliance.py @danieleschmidt
+SECURITY.md @danieleschmidt
+
+# Infrastructure & Deployment  
+/deployment/ @danieleschmidt
+/deployment/docker-compose*.yml @danieleschmidt
+Dockerfile* @danieleschmidt
+Makefile @danieleschmidt
+
+# Distributed Processing & Scaling
+/src/llm_tab_cleaner/spark.py @danieleschmidt
+/src/llm_tab_cleaner/distributed.py @danieleschmidt
+/src/llm_tab_cleaner/auto_scaling.py @danieleschmidt
+/src/llm_tab_cleaner/intelligent_autoscaling.py @danieleschmidt
+
+# AI/ML & Research Components
+/src/llm_tab_cleaner/research.py @danieleschmidt
+/src/llm_tab_cleaner/adaptive*.py @danieleschmidt
+/src/llm_tab_cleaner/neural_confidence.py @danieleschmidt
+/src/llm_tab_cleaner/federated_*.py @danieleschmidt
+/src/llm_tab_cleaner/ml_quality_gates.py @danieleschmidt
+
+# Monitoring & Observability
+/src/llm_tab_cleaner/monitoring.py @danieleschmidt
+/src/llm_tab_cleaner/autonomous_monitoring.py @danieleschmidt
+/src/llm_tab_cleaner/health.py @danieleschmidt
+/docs/monitoring/ @danieleschmidt
+
+# Testing Infrastructure
+/tests/ @danieleschmidt
+/conftest.py @danieleschmidt
+/*test*.py @danieleschmidt
+/run_*_tests.py @danieleschmidt
+
+# Documentation & Community
+*.md @danieleschmidt
+/docs/ @danieleschmidt
+CONTRIBUTING.md @danieleschmidt
+CODE_OF_CONDUCT.md @danieleschmidt
+LICENSE @danieleschmidt
+
+# Configuration & CI/CD
+pyproject.toml @danieleschmidt
+.github/ @danieleschmidt
+/docs/workflows/ @danieleschmidt
+
+# Quality Gates & Validation
+/*quality_gates*.py @danieleschmidt
+/quality_reports/ @danieleschmidt
+/comprehensive_quality_gates.py @danieleschmidt
+
+# Production Systems
+/src/llm_tab_cleaner/autonomous_production_system.py @danieleschmidt
+/src/llm_tab_cleaner/deployment.py @danieleschmidt
+/*deployment*.py @danieleschmidt
+/production_deployment.py @danieleschmidt
+
+# Examples & Demonstrations  
+/examples/ @danieleschmidt
+/*demo*.py @danieleschmidt
+/research_*.py @danieleschmidt
