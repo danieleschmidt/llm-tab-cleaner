@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  dev:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile.dev
+    volumes:
+      - ../..:/workspaces:cached
+      - /var/run/docker.sock:/var/run/docker-host.sock
+    command: sleep infinity
+    environment:
+      - PYTHONPATH=/workspace/src
+      - DEVELOPMENT_MODE=true
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+    networks:
+      - llm-tab-cleaner-dev
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - llm-tab-cleaner-dev
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: llm_tab_cleaner_dev
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: devpass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - llm-tab-cleaner-dev
+
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    networks:
+      - llm-tab-cleaner-dev
+
+volumes:
+  redis-data:
+  postgres-data:
+  prometheus-data:
+
+networks:
+  llm-tab-cleaner-dev:
+    driver: bridge

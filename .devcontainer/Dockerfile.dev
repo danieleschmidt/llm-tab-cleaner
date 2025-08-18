@@ -1,0 +1,55 @@
+FROM mcr.microsoft.com/devcontainers/python:1-3.11-bullseye
+
+# Install system dependencies
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install --no-install-recommends \
+        build-essential \
+        curl \
+        git \
+        vim \
+        postgresql-client \
+        redis-tools \
+        jq \
+        htop \
+        tree \
+        wget \
+        unzip \
+    && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+
+# Install Java for Spark
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install --no-install-recommends openjdk-11-jdk-headless \
+    && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+
+# Set Java environment
+ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+ENV PATH=$PATH:$JAVA_HOME/bin
+
+# Install Python dependencies
+COPY requirements*.txt pyproject.toml /tmp/
+RUN pip install --upgrade pip setuptools wheel \
+    && pip install -r /tmp/requirements.txt || true \
+    && pip install pytest pytest-cov black ruff mypy isort pre-commit \
+    && pip install jupyter jupyterlab \
+    && pip install pyspark apache-spark \
+    && rm -rf /tmp/requirements*.txt
+
+# Install development tools
+RUN pip install \
+    ipython \
+    ipdb \
+    python-dotenv \
+    rich \
+    typer \
+    httpx \
+    pytest-xdist \
+    pytest-mock \
+    pytest-asyncio
+
+# Create workspace directory
+WORKDIR /workspace
+
+# Set up git safe directory
+RUN git config --global --add safe.directory /workspace
+
+USER vscode
