@@ -1,0 +1,476 @@
+# Production Docker Compose for LLM Tab Cleaner
+# Optimized for production deployment with security, monitoring, and scaling
+version: '3.8'
+
+services:
+  # Production LLM Tab Cleaner service
+  llm-cleaner:
+    image: ${REGISTRY:-ghcr.io/danieleschmidt}/llm-tab-cleaner:${TAG:-latest}
+    container_name: llm-tab-cleaner-prod
+    restart: always
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 8G
+        reservations:
+          cpus: '2.0'
+          memory: 4G
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 30s
+        failure_action: rollback
+        order: stop-first
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: pause
+        order: stop-first
+    
+    environment:
+      # Application settings
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+      - PYTHONUNBUFFERED=1
+      
+      # LLM Configuration (from secrets)
+      - OPENAI_API_KEY_FILE=/run/secrets/openai_api_key
+      - ANTHROPIC_API_KEY_FILE=/run/secrets/anthropic_api_key
+      - LLM_PROVIDER=${LLM_PROVIDER:-anthropic}
+      
+      # Performance settings
+      - CONFIDENCE_THRESHOLD=${CONFIDENCE_THRESHOLD:-0.85}
+      - BATCH_SIZE=${BATCH_SIZE:-5000}
+      - MAX_WORKERS=${MAX_WORKERS:-8}
+      - CACHE_ENABLED=true
+      - CACHE_TTL_SECONDS=3600
+      
+      # Database configuration
+      - DATABASE_URL=postgresql://llmuser:${DB_PASSWORD}@postgres:5432/llm_tab_cleaner
+      - DATABASE_POOL_SIZE=20
+      - DATABASE_MAX_OVERFLOW=30
+      
+      # Redis configuration
+      - REDIS_URL=redis://redis:6379/0
+      - REDIS_PASSWORD_FILE=/run/secrets/redis_password
+      
+      # Monitoring and observability
+      - METRICS_ENABLED=true
+      - METRICS_PORT=9090
+      - JAEGER_ENABLED=true
+      - JAEGER_AGENT_HOST=jaeger-agent
+      - JAEGER_AGENT_PORT=6831
+      
+      # Security settings
+      - SECURITY_SCAN_ENABLED=true
+      - AUDIT_LOG_ENABLED=true
+      - ENCRYPTION_KEY_FILE=/run/secrets/encryption_key
+      
+      # API settings
+      - API_RATE_LIMIT_PER_MINUTE=10000
+      - API_KEY_REQUIRED=true
+      - CORS_ENABLED=false
+    
+    volumes:
+      # Persistent data
+      - llm-data:/app/data:rw
+      - llm-logs:/app/logs:rw
+      
+      # Configuration (read-only)
+      - ./config/production:/app/config:ro
+      
+      # Temporary files
+      - llm-temp:/app/temp:rw
+    
+    secrets:
+      - openai_api_key
+      - anthropic_api_key
+      - redis_password
+      - encryption_key
+      - api_key
+    
+    networks:
+      - llm-backend
+      - llm-frontend
+    
+    ports:
+      - "5000:5000"     # API port
+      - "9090:9090"     # Metrics port
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+        labels: "service=llm-cleaner,environment=production"
+
+  # Production PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    container_name: llm-postgres-prod
+    restart: always
+    
+    environment:
+      - POSTGRES_DB=llm_tab_cleaner
+      - POSTGRES_USER=llmuser
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+      - ./database/backups:/backups:rw
+    
+    secrets:
+      - db_password
+    
+    networks:
+      - llm-backend
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U llmuser -d llm_tab_cleaner"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  # Production Redis cache
+  redis:
+    image: redis:7-alpine
+    container_name: llm-redis-prod
+    restart: always
+    
+    command: >
+      redis-server 
+      --appendonly yes 
+      --requirepass-file /run/secrets/redis_password
+      --maxmemory 2gb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    
+    volumes:
+      - redis-data:/data
+      - ./config/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    
+    secrets:
+      - redis_password
+    
+    networks:
+      - llm-backend
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # NGINX reverse proxy and load balancer
+  nginx:
+    image: nginx:alpine
+    container_name: llm-nginx-prod
+    restart: always
+    
+    volumes:
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./config/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - nginx-cache:/var/cache/nginx
+      - nginx-logs:/var/log/nginx
+    
+    networks:
+      - llm-frontend
+    
+    ports:
+      - "80:80"
+      - "443:443"
+    
+    depends_on:
+      - llm-cleaner
+    
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  # Prometheus monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: llm-prometheus-prod
+    restart: always
+    
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+      - '--storage.tsdb.retention.time=30d'
+      - '--storage.tsdb.retention.size=10GB'
+    
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+    
+    networks:
+      - llm-backend
+    
+    ports:
+      - "9091:9090"
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Grafana visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: llm-grafana-prod
+    restart: always
+    
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD_FILE=/run/secrets/grafana_password
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    
+    secrets:
+      - grafana_password
+    
+    networks:
+      - llm-backend
+      - llm-frontend
+    
+    ports:
+      - "3001:3000"
+    
+    depends_on:
+      - prometheus
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.2'
+          memory: 512M
+
+  # Jaeger tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: llm-jaeger-prod
+    restart: always
+    
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    
+    volumes:
+      - jaeger-data:/tmp
+    
+    networks:
+      - llm-backend
+    
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14250:14250"  # gRPC
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # Log aggregation with Fluentd
+  fluentd:
+    image: fluent/fluentd:v1.16-1
+    container_name: llm-fluentd-prod
+    restart: always
+    
+    volumes:
+      - ./monitoring/fluentd/fluent.conf:/fluentd/etc/fluent.conf:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    
+    networks:
+      - llm-backend
+    
+    ports:
+      - "24224:24224"
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+# Secrets management
+secrets:
+  openai_api_key:
+    external: true
+    name: llm_openai_api_key_v1
+  anthropic_api_key:
+    external: true  
+    name: llm_anthropic_api_key_v1
+  db_password:
+    external: true
+    name: llm_db_password_v1
+  redis_password:
+    external: true
+    name: llm_redis_password_v1
+  encryption_key:
+    external: true
+    name: llm_encryption_key_v1
+  api_key:
+    external: true
+    name: llm_api_key_v1
+  grafana_password:
+    external: true
+    name: llm_grafana_password_v1
+
+# Named volumes for persistent data
+volumes:
+  llm-data:
+    name: llm-tab-cleaner-data
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/llm-tab-cleaner/data
+      
+  llm-logs:
+    name: llm-tab-cleaner-logs
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/llm-tab-cleaner/logs
+      
+  llm-temp:
+    name: llm-tab-cleaner-temp
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/llm-tab-cleaner/temp
+      
+  postgres-data:
+    name: llm-postgres-data
+    driver: local
+    
+  redis-data:
+    name: llm-redis-data
+    driver: local
+    
+  prometheus-data:
+    name: llm-prometheus-data
+    driver: local
+    
+  grafana-data:
+    name: llm-grafana-data
+    driver: local
+    
+  jaeger-data:
+    name: llm-jaeger-data
+    driver: local
+    
+  nginx-cache:
+    name: llm-nginx-cache
+    driver: local
+    
+  nginx-logs:
+    name: llm-nginx-logs
+    driver: local
+
+# Network configuration
+networks:
+  llm-frontend:
+    name: llm-tab-cleaner-frontend
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.1.0/24
+          
+  llm-backend:
+    name: llm-tab-cleaner-backend
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.20.2.0/24

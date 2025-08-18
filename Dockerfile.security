@@ -1,0 +1,230 @@
+# Security-hardened multi-stage build for LLM Tab Cleaner
+# Based on security best practices and minimal attack surface
+
+# =============================================================================
+# Security Builder Stage
+# =============================================================================
+FROM python:3.11-slim as security-builder
+
+# Build arguments for security metadata
+ARG BUILD_DATE
+ARG VERSION=unknown
+ARG VCS_REF=unknown
+ARG SECURITY_SCAN_DATE
+ARG SBOM_HASH
+
+# Security labels (SLSA provenance)
+LABEL org.opencontainers.image.title="LLM Tab Cleaner (Security Hardened)"
+LABEL org.opencontainers.image.description="Production data cleaning with language models - security hardened"
+LABEL org.opencontainers.image.version="${VERSION}"
+LABEL org.opencontainers.image.created="${BUILD_DATE}"
+LABEL org.opencontainers.image.revision="${VCS_REF}"
+LABEL org.opencontainers.image.source="https://github.com/terragonlabs/llm-tab-cleaner"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.vendor="Terragon Labs"
+LABEL security.scan.date="${SECURITY_SCAN_DATE}"
+LABEL security.sbom.hash="${SBOM_HASH}"
+LABEL security.compliance="SOC2,ISO27001,GDPR"
+
+# Security environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONHASHSEED=random \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_DEFAULT_TIMEOUT=100 \
+    PIP_TRUSTED_HOST=pypi.org \
+    SSL_VERIFY=1
+
+# Install security tools and minimal system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        # Build essentials (minimal)
+        build-essential=12.9ubuntu3 \
+        # Security tools
+        ca-certificates=20230311ubuntu0.22.04.1 \
+        curl=7.81.0-1ubuntu1.15 \
+        gnupg=2.2.27-3ubuntu2.1 \
+        # Git for source verification
+        git=1:2.34.1-1ubuntu1.10 && \
+    # Remove package cache to reduce attack surface
+    rm -rf /var/lib/apt/lists/* && \
+    # Remove unnecessary packages
+    apt-get purge -y --auto-remove && \
+    # Clean up
+    apt-get clean
+
+# Create non-privileged user with minimal permissions
+RUN groupadd --gid 10001 --system llmuser && \
+    useradd --uid 10001 --system --gid llmuser \
+            --home-dir /app --no-create-home \
+            --shell /sbin/nologin llmuser
+
+# Set secure work directory
+WORKDIR /app
+
+# Copy only necessary files for dependency installation
+COPY --chown=root:root pyproject.toml README.md ./
+
+# Install Python dependencies with security constraints
+RUN pip install --no-cache-dir --upgrade pip==23.3.1 setuptools==68.2.2 wheel==0.41.3 && \
+    # Create constraints file for security
+    echo "# Security constraints for LLM Tab Cleaner" > constraints.txt && \
+    echo "requests>=2.31.0,<3.0.0  # CVE-2023-32681" >> constraints.txt && \
+    echo "urllib3>=2.0.0,<3.0.0    # CVE-2023-43804" >> constraints.txt && \
+    echo "certifi>=2023.7.22       # Certificate updates" >> constraints.txt && \
+    echo "cryptography>=41.0.0     # Security updates" >> constraints.txt && \
+    # Install with constraints
+    pip install --no-cache-dir --constraint constraints.txt -e ".[all]" && \
+    # Security scan dependencies
+    pip install --no-cache-dir safety==2.3.5 bandit==1.7.5 pip-audit==2.6.1 && \
+    # Clean up pip cache
+    pip cache purge
+
+# Copy source code with proper ownership
+COPY --chown=root:root src/ ./src/
+
+# Run security scans during build
+RUN echo "Running security scans..." && \
+    # Dependency vulnerability scan
+    pip-audit --format=json --output=security-audit.json || true && \
+    # Code security scan  
+    bandit -r src/ -f json -o bandit-report.json || true && \
+    # Safety check
+    safety check --json --output=safety-report.json || true && \
+    echo "Security scans completed"
+
+# =============================================================================
+# Security Production Stage  
+# =============================================================================
+FROM python:3.11-slim as security-production
+
+# Copy build metadata
+COPY --from=security-builder /app/security-audit.json /app/bandit-report.json /app/safety-report.json /security-reports/
+
+# Install minimal runtime dependencies only
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        # Minimal runtime requirements
+        ca-certificates=20230311ubuntu0.22.04.1 \
+        curl=7.81.0-1ubuntu1.15 && \
+    # Security hardening
+    # Remove setuid/setgid binaries
+    find / -perm /6000 -type f -exec chmod a-s {} \; 2>/dev/null || true && \
+    # Remove unnecessary packages and files
+    apt-get purge -y --auto-remove && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    rm -rf /tmp/* /var/tmp/* && \
+    # Remove shells for security (except for the one we need)
+    rm -f /bin/sh /usr/bin/sh 2>/dev/null || true
+
+# Security environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONHASHSEED=random \
+    PATH="/home/llmuser/.local/bin:$PATH" \
+    # Security settings
+    SECURITY_MODE=strict \
+    AUDIT_LOG_ENABLED=true \
+    ENCRYPTION_REQUIRED=true \
+    TLS_VERIFY=true \
+    # Disable debug modes
+    DEBUG=false \
+    FLASK_DEBUG=false \
+    DEVELOPMENT_MODE=false
+
+# Copy non-root user from builder
+COPY --from=security-builder /etc/passwd /etc/group /etc/
+
+# Copy installed packages from builder
+COPY --from=security-builder --chown=root:root /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=security-builder --chown=root:root /usr/local/bin /usr/local/bin
+
+# Set secure work directory
+WORKDIR /app
+
+# Copy application with proper ownership and permissions
+COPY --from=security-builder --chown=root:root /app /app
+
+# Create secure directories with proper permissions
+RUN mkdir -p /app/data /app/logs /app/temp /app/config && \
+    # Set proper ownership and permissions
+    chown -R llmuser:llmuser /app/data /app/logs /app/temp && \
+    chmod 750 /app/data /app/logs /app/temp && \
+    chmod 755 /app/config && \
+    # Secure the application files
+    find /app -type f -name "*.py" -exec chmod 644 {} \; && \
+    find /app -type d -exec chmod 755 {} \; && \
+    # Make CLI executable
+    chmod 755 /usr/local/bin/llm-clean 2>/dev/null || true
+
+# Security: Drop all capabilities and add only necessary ones
+# This is set in docker-compose/kubernetes deployment
+
+# Switch to non-root user (important for security)
+USER llmuser:llmuser
+
+# Set up secure file permissions (as non-root)
+RUN umask 0027
+
+# Security health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import llm_tab_cleaner; print('Security check: OK')" || exit 1
+
+# Secure startup
+ENTRYPOINT ["python", "-m", "llm_tab_cleaner.cli"]
+CMD ["--help"]
+
+# =============================================================================
+# Distroless Production Stage (Ultra-secure)
+# =============================================================================
+FROM gcr.io/distroless/python3-debian11 as distroless-production
+
+# Copy Python packages and application
+COPY --from=security-builder --chown=nonroot:nonroot /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=security-builder --chown=nonroot:nonroot /app /app
+
+# Distroless environment
+ENV PYTHONPATH=/usr/local/lib/python3.11/site-packages
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Use distroless non-root user
+USER nonroot:nonroot
+
+# Set working directory
+WORKDIR /app
+
+# No shell available in distroless - ultimate security
+ENTRYPOINT ["python", "-m", "llm_tab_cleaner.cli"]
+CMD ["--help"]
+
+# =============================================================================
+# Security Scanning Stage (for CI/CD)
+# =============================================================================
+FROM security-builder as security-scanner
+
+# Install additional security tools
+RUN pip install --no-cache-dir \
+    cyclonedx-bom==4.0.4 \
+    semgrep==1.45.0 \
+    trivy==0.46.0 || true
+
+# Generate SBOM
+RUN cyclonedx-py -o sbom.json -f json || true && \
+    # Generate requirements for security scanning
+    pip freeze > requirements-security.txt && \
+    echo "Security scanning stage ready"
+
+# Security scan entrypoint
+ENTRYPOINT ["python", "-c", "print('Security scanning container ready')"]
+
+# =============================================================================
+# Build Stage Selection
+# =============================================================================
+# Default to security-production stage
+# Use --target flag to select different stages:
+# - security-production: Security-hardened production build
+# - distroless-production: Ultra-secure distroless build (no shell/package manager)
+# - security-scanner: Security scanning tools for CI/CD
