@@ -1,0 +1,23 @@
+{
+  "region": "us-east-1",
+  "is_primary": true,
+  "scaling": {
+    "min_instances": 2,
+    "max_instances": 20,
+    "target_cpu": 70
+  },
+  "storage": {
+    "type": "distributed",
+    "replication_factor": 3,
+    "backup_enabled": true
+  },
+  "networking": {
+    "vpc_cidr": "10.100.0.0/16",
+    "subnets": [
+      "us-east-1a",
+      "us-east-1b",
+      "us-east-1c"
+    ],
+    "nat_gateway": true
+  }
+}
