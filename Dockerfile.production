@@ -1,90 +1,56 @@
-# Production-optimized Dockerfile for LLM Tab Cleaner
-FROM python:3.12-slim AS base
+# Production Dockerfile for LLM Tab Cleaner
+FROM python:3.11-slim as builder
 
 # Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
-
-# Create app user
-RUN groupadd -r app && useradd -r -g app app
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PIP_NO_CACHE_DIR=1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
-    curl \
-    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Build stage
-FROM base AS builder
+# Create virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-WORKDIR /build
-
-# Copy requirements
-COPY pyproject.toml README.md ./
-COPY src/ src/
-
-# Install build dependencies and package
-RUN pip install --upgrade pip setuptools wheel build && \
-    python -m build && \
-    pip wheel --no-deps -w dist dist/*.whl
+# Copy requirements and install dependencies
+COPY pyproject.toml .
+RUN pip install --upgrade pip && \
+    pip install -e .
 
 # Production stage
-FROM base AS production
+FROM python:3.11-slim as production
 
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+
+# Create app directory
 WORKDIR /app
 
-# Install runtime dependencies
-COPY --from=builder /build/dist/*.whl /tmp/
-RUN pip install --no-cache-dir /tmp/*.whl && \
-    rm -f /tmp/*.whl
-
 # Copy application code
-COPY src/ src/
-COPY deployment/scripts/ scripts/
+COPY --chown=appuser:appuser src/ ./src/
+COPY --chown=appuser:appuser pyproject.toml ./
 
-# Create necessary directories
-RUN mkdir -p /app/logs /app/data /app/backups /tmp/llm-tab-cleaner && \
-    chown -R app:app /app /tmp/llm-tab-cleaner
-
-# Security hardening
-RUN chmod -R 755 /app && \
-    chmod -R 700 /app/logs /app/data /app/backups
-
-# Switch to app user
-USER app
+# Switch to non-root user
+USER appuser
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import sys; sys.path.insert(0, '/app/src'); from llm_tab_cleaner import get_version_info; print(get_version_info())" || exit 1
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD python -c "import requests; requests.get('http://localhost:8000/health')"
 
-# Expose ports
-EXPOSE 8000 8001
+# Expose port
+EXPOSE 8000
 
-# Default command
-CMD ["python", "-m", "llm_tab_cleaner.api", "--host", "0.0.0.0", "--port", "8000"]
-
-# Development stage (for testing)
-FROM production AS development
-
-USER root
-
-# Install development dependencies
-RUN pip install --no-cache-dir pytest pytest-cov pytest-mock black ruff mypy
-
-# Copy test files
-COPY tests/ tests/
-
-USER app
-
-CMD ["python", "-m", "pytest", "tests/", "-v"]
-
-# Labels for container metadata
-LABEL org.opencontainers.image.title="LLM Tab Cleaner" \
-      org.opencontainers.image.description="Production-ready LLM-powered data cleaning service" \
-      org.opencontainers.image.version="0.3.0" \
-      org.opencontainers.image.vendor="Terragon Labs" \
-      org.opencontainers.image.licenses="MIT" \
-      org.opencontainers.image.source="https://github.com/terragonlabs/llm-tab-cleaner"
+# Start application
+CMD ["python", "-m", "llm_tab_cleaner.cli", "serve", "--host", "0.0.0.0", "--port", "8000"]

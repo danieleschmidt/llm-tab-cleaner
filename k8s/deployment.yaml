@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-tab-cleaner
+  labels:
+    app: llm-tab-cleaner
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: llm-tab-cleaner
+  template:
+    metadata:
+      labels:
+        app: llm-tab-cleaner
+    spec:
+      containers:
+      - name: llm-tab-cleaner
+        image: llm-tab-cleaner:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: ENVIRONMENT
+          value: "production"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5

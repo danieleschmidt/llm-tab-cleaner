@@ -1,0 +1,151 @@
+{
+  "timestamp": "2025-08-19T23:39:47.734015",
+  "validation_start": 1755646787.7336733,
+  "gates_passed": 5,
+  "gates_total": 6,
+  "overall_score": 0.9117173363426101,
+  "quality_tier_achieved": "robust",
+  "details": {
+    "code_quality": {
+      "passed": true,
+      "score": 1.0,
+      "checks": {
+        "syntax": {
+          "passed": true,
+          "files_checked": 41,
+          "valid_files": 41,
+          "syntax_errors": [],
+          "score": 1.0
+        },
+        "structure": {
+          "passed": true,
+          "score": 1.0,
+          "expected_modules": 5,
+          "existing_modules": 5,
+          "missing_modules": []
+        },
+        "patterns": {
+          "passed": true,
+          "score": 1.0,
+          "patterns_found": 5,
+          "total_patterns": 5,
+          "pattern_details": {
+            "progressive_gates": true,
+            "robust_enhancement": true,
+            "scale_optimization": true,
+            "error_handling": true,
+            "logging": true
+          }
+        }
+      },
+      "recommendations": []
+    },
+    "test_structure": {
+      "passed": false,
+      "score": 0.4878048780487805,
+      "test_files": 10,
+      "recommendations": [
+        "Add more test files to improve coverage"
+      ],
+      "source_files": 41,
+      "existing_test_files": [
+        "tests/test_core.py"
+      ]
+    },
+    "security": {
+      "passed": true,
+      "score": 1.0,
+      "security_checks": {
+        "patterns": {
+          "input_validation": true,
+          "security_scanner": true,
+          "error_handling": true,
+          "sanitization": true
+        },
+        "dangerous_patterns": []
+      },
+      "recommendations": []
+    },
+    "performance": {
+      "passed": true,
+      "score": 1.0,
+      "performance_features": {
+        "caching": true,
+        "load_balancing": true,
+        "auto_scaling": true,
+        "optimization": true
+      },
+      "recommendations": [],
+      "features_implemented": 4
+    },
+    "documentation": {
+      "passed": true,
+      "score": 0.98249914000688,
+      "documentation_checks": {
+        "readme": {
+          "exists": true,
+          "length": 9737,
+          "score": 1.0,
+          "passed": true
+        },
+        "api_docs": {
+          "files_found": 2,
+          "passed": true,
+          "score": 1.0
+        },
+        "architecture_docs": {
+          "files_found": 2,
+          "passed": true,
+          "score": 1.0
+        },
+        "docstrings": {
+          "coverage": 0.9299965600275198,
+          "passed": true,
+          "score": 0.9299965600275198
+        }
+      },
+      "recommendations": []
+    },
+    "architecture": {
+      "passed": true,
+      "score": 1.0,
+      "architecture_checks": {
+        "progressive_pattern": {
+          "implemented": true,
+          "tiers": {
+            "simple_tier": true,
+            "robust_tier": true,
+            "optimized_tier": true
+          },
+          "score": 1.0,
+          "passed": true
+        },
+        "separation_of_concerns": {
+          "implemented": true,
+          "components": {
+            "core_functionality": true,
+            "configuration": true,
+            "deployment": true,
+            "testing": true
+          },
+          "score": 1.0,
+          "passed": true
+        },
+        "extensibility": {
+          "patterns_found": [
+            "async_support",
+            "object_oriented",
+            "registration_pattern"
+          ],
+          "pattern_count": 3,
+          "score": 1.0,
+          "passed": true
+        }
+      },
+      "recommendations": []
+    }
+  },
+  "success": true,
+  "validation_end": 1755646788.0329201,
+  "total_duration": 0.29924702644348145
+}
