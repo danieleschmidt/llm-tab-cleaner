@@ -1,0 +1,79 @@
+{
+  "package_id": "prod-deploy-1755746168",
+  "version": "v2.0.0",
+  "timestamp": "2025-08-21T03:16:08.417565",
+  "components": [
+    {
+      "name": "Docker Configuration",
+      "files": [
+        "Dockerfile",
+        "docker-compose.yml",
+        "docker-compose.production.yml"
+      ],
+      "path": "deployment/docker/",
+      "status": "generated"
+    },
+    {
+      "name": "Kubernetes Configuration",
+      "files": [
+        "namespace.yaml",
+        "deployment.yaml",
+        "service.yaml",
+        "ingress.yaml",
+        "configmap.yaml",
+        "hpa.yaml"
+      ],
+      "path": "deployment/k8s/",
+      "status": "generated"
+    },
+    {
+      "name": "Helm Chart",
+      "files": [
+        "Chart.yaml",
+        "values.yaml"
+      ],
+      "path": "deployment/helm/llm-tab-cleaner/",
+      "status": "generated"
+    },
+    {
+      "name": "Terraform Infrastructure",
+      "files": [
+        "main.tf",
+        "variables.tf",
+        "outputs.tf"
+      ],
+      "path": "deployment/terraform/",
+      "status": "generated"
+    },
+    {
+      "name": "Monitoring Configuration",
+      "files": [
+        "prometheus.yml",
+        "grafana-dashboard.json",
+        "alerts.yml"
+      ],
+      "path": "deployment/monitoring/",
+      "status": "generated"
+    },
+    {
+      "name": "Deployment Scripts",
+      "files": [
+        "deploy.sh",
+        "rollback.sh",
+        "health-check.sh"
+      ],
+      "path": "deployment/scripts/",
+      "status": "generated"
+    },
+    {
+      "name": "Configuration Files",
+      "files": [
+        "values.production.yaml",
+        "production.env",
+        "secrets.yaml.template"
+      ],
+      "path": "deployment/configs/",
+      "status": "generated"
+    }
+  ]
+}

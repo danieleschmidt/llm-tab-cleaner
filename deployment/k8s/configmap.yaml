@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: llm-tab-cleaner-config
+  namespace: llm-tab-cleaner
+data:
+  config.yaml: |
+    app:
+      name: "LLM Tab Cleaner"
+      version: "v2.0.0"
+      environment: "production"
+    
+    logging:
+      level: "INFO"
+      format: "json"
+    
+    cache:
+      redis_url: "redis://redis-service:6379"
+      ttl: 3600
+    
+    performance:
+      max_workers: 10
+      timeout: 30
+      batch_size: 100
