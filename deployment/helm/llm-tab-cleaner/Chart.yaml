@@ -1,0 +1,16 @@
+apiVersion: v2
+name: llm-tab-cleaner
+description: A Helm chart for LLM Tab Cleaner autonomous production system
+type: application
+version: 0.1.0
+appVersion: "v2.0.0"
+keywords:
+  - llm
+  - data-cleaning
+  - ai
+  - etl
+maintainers:
+  - name: Terry
+    email: terry@terragonlabs.com
+sources:
+  - https://github.com/terragonlabs/llm-tab-cleaner

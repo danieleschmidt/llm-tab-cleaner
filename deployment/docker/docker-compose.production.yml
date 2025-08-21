@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  llm-tab-cleaner:
+    image: llm-tab-cleaner:v2.0.0
+    ports:
+      - "8000:8000"
+    environment:
+      - ENV=production
+      - LOG_LEVEL=WARNING
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://app:${DB_PASSWORD}@postgres:5432/llm_tab_cleaner
+    secrets:
+      - openai_api_key
+      - anthropic_api_key
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+secrets:
+  openai_api_key:
+    external: true
+  anthropic_api_key:
+    external: true
