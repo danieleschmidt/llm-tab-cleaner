@@ -1,23 +1,12 @@
 {
   "region": "eu-west-1",
-  "is_primary": false,
-  "scaling": {
-    "min_instances": 1,
-    "max_instances": 10,
-    "target_cpu": 70
-  },
-  "storage": {
-    "type": "distributed",
-    "replication_factor": 3,
-    "backup_enabled": true
-  },
-  "networking": {
-    "vpc_cidr": "10.199.0.0/16",
-    "subnets": [
-      "eu-west-1a",
-      "eu-west-1b",
-      "eu-west-1c"
-    ],
-    "nat_gateway": true
-  }
+  "instances": 2,
+  "deployment_time": "2025-08-21T09:54:40.797245",
+  "version": "v4.0-autonomous",
+  "features": [
+    "llm_data_cleaning",
+    "autonomous_production",
+    "intelligent_quality_gates",
+    "hyperscale_optimization"
+  ]
 }
