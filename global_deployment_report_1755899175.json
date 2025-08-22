@@ -1,0 +1,64 @@
+{
+  "deployment_state": {
+    "deployment_id": "deploy-1755899060",
+    "overall_status": "rolled_back",
+    "start_time": "2025-08-22T21:44:20.881355",
+    "end_time": "2025-08-22T21:46:15.988675",
+    "global_health_score": 0.04750000000000001,
+    "total_traffic_shifted": 5,
+    "rollback_reason": "Health degradation during traffic shift: 0.05",
+    "regional_deployments": {
+      "us-east-1": {
+        "status": "rolled_back",
+        "health_score": 0.95,
+        "traffic_percentage": 0.0,
+        "rollback_triggered": true
+      },
+      "eu-west-1": {
+        "status": "rolled_back",
+        "health_score": 0.95,
+        "traffic_percentage": 0.0,
+        "rollback_triggered": true
+      },
+      "ap-southeast-1": {
+        "status": "rolled_back",
+        "health_score": 0.95,
+        "traffic_percentage": 0.0,
+        "rollback_triggered": true
+      }
+    }
+  },
+  "analytics": {
+    "total_deployments": 1,
+    "successful_deployments": 0,
+    "success_rate": 0.0,
+    "average_deployment_time_seconds": 115.10732,
+    "regional_statistics": {
+      "us-east-1": {
+        "total": 1,
+        "successful": 0,
+        "success_rate": 0.0
+      },
+      "eu-west-1": {
+        "total": 1,
+        "successful": 0,
+        "success_rate": 0.0
+      },
+      "ap-southeast-1": {
+        "total": 1,
+        "successful": 0,
+        "success_rate": 0.0
+      }
+    },
+    "recent_deployments": [
+      {
+        "deployment_id": "deploy-1755899060",
+        "status": "rolled_back",
+        "start_time": "2025-08-22T21:44:20.881355",
+        "end_time": "2025-08-22T21:46:15.988675",
+        "global_health_score": 0.04750000000000001,
+        "regions_deployed": 0
+      }
+    ]
+  }
+}
