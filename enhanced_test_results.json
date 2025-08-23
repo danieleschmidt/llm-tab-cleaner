@@ -1,0 +1,256 @@
+{
+  "timestamp": "2025-08-22T21:40:36.082994",
+  "summary": {
+    "tests_run": 30,
+    "failures": 15,
+    "errors": 3,
+    "success_rate": 40.0,
+    "execution_time": 0.08039498329162598,
+    "coverage_estimate": 16.3265306122449
+  },
+  "categories": [
+    {
+      "category": "unit_tests",
+      "tests_run": 21,
+      "failures": 10,
+      "errors": 0,
+      "details": [
+        {
+          "module": "core",
+          "tests_run": 3,
+          "failures": 2,
+          "errors": 0,
+          "test_cases": [
+            {
+              "test": "import",
+              "status": "failed",
+              "error": "No module named 'pandas'"
+            },
+            {
+              "test": "module_exists",
+              "status": "passed"
+            },
+            {
+              "test": "instantiation",
+              "status": "failed",
+              "error": "No module named 'pandas'"
+            }
+          ]
+        },
+        {
+          "module": "confidence",
+          "tests_run": 3,
+          "failures": 2,
+          "errors": 0,
+          "test_cases": [
+            {
+              "test": "import",
+              "status": "failed",
+              "error": "No module named 'pandas'"
+            },
+            {
+              "test": "module_exists",
+              "status": "passed"
+            },
+            {
+              "test": "instantiation",
+              "status": "failed",
+              "error": "No module named 'pandas'"
+            }
+          ]
+        },
+        {
+          "module": "cleaning_rule",
+          "tests_run": 3,
+          "failures": 1,
+          "errors": 0,
+          "test_cases": [
+            {
+              "test": "import",
+              "status": "failed",
+              "error": "No module named 'pandas'"
+            },
+            {
+              "test": "module_exists",
+              "status": "passed"
+            },
+            {
+              "test": "instantiation",
+              "status": "skipped"
+            }
+          ]
+        },
+        {
+          "module": "profiler",
+          "tests_run": 3,
+          "failures": 2,
+          "errors": 0,
+          "test_cases": [
+            {
+              "test": "import",
+              "status": "failed",
+              "error": "No module named 'pandas'"
+            },
+            {
+              "test": "module_exists",
+              "status": "passed"
+            },
+            {
+              "test": "instantiation",
+              "status": "failed",
+              "error": "No module named 'pandas'"
+            }
+          ]
+        },
+        {
+          "module": "llm_providers",
+          "tests_run": 3,
+          "failures": 1,
+          "errors": 0,
+          "test_cases": [
+            {
+              "test": "import",
+              "status": "failed",
+              "error": "No module named 'pandas'"
+            },
+            {
+              "test": "module_exists",
+              "status": "passed"
+            },
+            {
+              "test": "instantiation",
+              "status": "skipped"
+            }
+          ]
+        },
+        {
+          "module": "incremental",
+          "tests_run": 3,
+          "failures": 1,
+          "errors": 0,
+          "test_cases": [
+            {
+              "test": "import",
+              "status": "failed",
+              "error": "No module named 'pandas'"
+            },
+            {
+              "test": "module_exists",
+              "status": "passed"
+            },
+            {
+              "test": "instantiation",
+              "status": "skipped"
+            }
+          ]
+        },
+        {
+          "module": "monitoring",
+          "tests_run": 3,
+          "failures": 1,
+          "errors": 0,
+          "test_cases": [
+            {
+              "test": "import",
+              "status": "failed",
+              "error": "No module named 'pandas'"
+            },
+            {
+              "test": "module_exists",
+              "status": "passed"
+            },
+            {
+              "test": "instantiation",
+              "status": "skipped"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "integration_tests",
+      "tests_run": 3,
+      "failures": 3,
+      "errors": 0,
+      "details": [
+        {
+          "test": "pipeline_creation",
+          "status": "failed",
+          "error": "No module named 'pandas'"
+        },
+        {
+          "test": "component_integration",
+          "status": "failed",
+          "error": "No module named 'pandas'"
+        },
+        {
+          "test": "autonomous_integration",
+          "status": "failed",
+          "error": "No module named 'pandas'"
+        }
+      ]
+    },
+    {
+      "category": "performance_tests",
+      "tests_run": 3,
+      "failures": 0,
+      "errors": 2,
+      "details": [
+        {
+          "test": "import_performance",
+          "status": "error",
+          "error": "No module named 'pandas'"
+        },
+        {
+          "test": "memory_usage",
+          "status": "skipped",
+          "reason": "psutil not available"
+        },
+        {
+          "test": "hyperscale_creation",
+          "status": "error",
+          "error": "No module named 'pandas'"
+        }
+      ]
+    },
+    {
+      "category": "security_tests",
+      "tests_run": 3,
+      "failures": 2,
+      "errors": 1,
+      "details": [
+        {
+          "test": "hardcoded_secrets",
+          "status": "failed",
+          "potential_secrets": [
+            "advanced_security.py:355",
+            "advanced_security.py:39",
+            "advanced_security.py:178",
+            "advanced_security.py:183",
+            "advanced_security.py:191"
+          ]
+        },
+        {
+          "test": "input_validation",
+          "status": "error",
+          "error": "No module named 'pandas'"
+        },
+        {
+          "test": "dependency_security",
+          "status": "failed",
+          "insecure_usage": [
+            "caching.py: unsafe pickle.loads",
+            "hyperscale_optimization.py: unsafe pickle.loads"
+          ]
+        }
+      ]
+    }
+  ],
+  "overall_status": "FAILED",
+  "recommendations": [
+    "Increase test coverage from 16.3% to at least 85%",
+    "Fix 15 failing tests",
+    "Resolve 3 test errors",
+    "Improve overall test success rate to at least 90%"
+  ]
+}

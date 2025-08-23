@@ -1,0 +1,627 @@
+{
+  "timestamp": "2025-08-22T21:42:27.560628",
+  "directory": "src/llm_tab_cleaner",
+  "files_scanned": 49,
+  "total_vulnerabilities": 23,
+  "critical_vulnerabilities": 0,
+  "high_vulnerabilities": 18,
+  "medium_vulnerabilities": 5,
+  "low_vulnerabilities": 0,
+  "file_results": [
+    {
+      "file": "src/llm_tab_cleaner/__init__.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/adaptive.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/adaptive_learning.py",
+      "vulnerabilities": [
+        {
+          "type": "unsafe_deserialization",
+          "severity": "high",
+          "line": 577,
+          "code": "pickle.load(",
+          "description": "Unsafe deserialization that could lead to code execution"
+        },
+        {
+          "type": "dangerous_import",
+          "severity": "high",
+          "line": 24,
+          "code": "import pickle",
+          "description": "Dangerous import: pickle can be unsafe if not used carefully"
+        }
+      ],
+      "total_vulns": 2,
+      "critical_vulns": 0,
+      "high_vulns": 2,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/adaptive_meta_routing.py",
+      "vulnerabilities": [
+        {
+          "type": "unsafe_deserialization",
+          "severity": "high",
+          "line": 960,
+          "code": "pickle.load(",
+          "description": "Unsafe deserialization that could lead to code execution"
+        },
+        {
+          "type": "dangerous_import",
+          "severity": "high",
+          "line": 939,
+          "code": "import pickle",
+          "description": "Dangerous import: pickle can be unsafe if not used carefully"
+        },
+        {
+          "type": "dangerous_import",
+          "severity": "high",
+          "line": 957,
+          "code": "import pickle",
+          "description": "Dangerous import: pickle can be unsafe if not used carefully"
+        }
+      ],
+      "total_vulns": 3,
+      "critical_vulns": 0,
+      "high_vulns": 3,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/advanced_performance_optimizer.py",
+      "vulnerabilities": [
+        {
+          "type": "dangerous_import",
+          "severity": "high",
+          "line": 22,
+          "code": "import pickle",
+          "description": "Dangerous import: pickle can be unsafe if not used carefully"
+        }
+      ],
+      "total_vulns": 1,
+      "critical_vulns": 0,
+      "high_vulns": 1,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/advanced_security.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/advanced_security_framework.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/auto_scaling.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/autonomous_monitoring.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/autonomous_production_enhanced.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/autonomous_production_system.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/backup.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/benchmarks.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/caching.py",
+      "vulnerabilities": [
+        {
+          "type": "unsafe_deserialization",
+          "severity": "high",
+          "line": 201,
+          "code": "pickle.loads(",
+          "description": "Unsafe deserialization that could lead to code execution"
+        },
+        {
+          "type": "unsafe_deserialization",
+          "severity": "high",
+          "line": 418,
+          "code": "pickle.loads(",
+          "description": "Unsafe deserialization that could lead to code execution"
+        },
+        {
+          "type": "dangerous_import",
+          "severity": "high",
+          "line": 6,
+          "code": "import pickle",
+          "description": "Dangerous import: pickle can be unsafe if not used carefully"
+        }
+      ],
+      "total_vulns": 3,
+      "critical_vulns": 0,
+      "high_vulns": 3,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/cleaning_rule.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/cli.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/compliance.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/confidence.py",
+      "vulnerabilities": [
+        {
+          "type": "unsafe_deserialization",
+          "severity": "high",
+          "line": 255,
+          "code": "pickle.load(",
+          "description": "Unsafe deserialization that could lead to code execution"
+        },
+        {
+          "type": "dangerous_import",
+          "severity": "high",
+          "line": 4,
+          "code": "import pickle",
+          "description": "Dangerous import: pickle can be unsafe if not used carefully"
+        }
+      ],
+      "total_vulns": 2,
+      "critical_vulns": 0,
+      "high_vulns": 2,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/core.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/cross_modal_calibration.py",
+      "vulnerabilities": [
+        {
+          "type": "unsafe_deserialization",
+          "severity": "high",
+          "line": 813,
+          "code": "pickle.load(",
+          "description": "Unsafe deserialization that could lead to code execution"
+        },
+        {
+          "type": "dangerous_import",
+          "severity": "high",
+          "line": 791,
+          "code": "import pickle",
+          "description": "Dangerous import: pickle can be unsafe if not used carefully"
+        },
+        {
+          "type": "dangerous_import",
+          "severity": "high",
+          "line": 810,
+          "code": "import pickle",
+          "description": "Dangerous import: pickle can be unsafe if not used carefully"
+        }
+      ],
+      "total_vulns": 3,
+      "critical_vulns": 0,
+      "high_vulns": 3,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/deployment.py",
+      "vulnerabilities": [
+        {
+          "type": "requires_care_import",
+          "severity": "medium",
+          "line": 5,
+          "code": "import os",
+          "description": "Import requires careful usage: os"
+        }
+      ],
+      "total_vulns": 1,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 1,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/distributed.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/enhanced_reliability_system.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/federated_learning.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/federated_quality_learning.py",
+      "vulnerabilities": [
+        {
+          "type": "dangerous_import",
+          "severity": "high",
+          "line": 36,
+          "code": "import pickle",
+          "description": "Dangerous import: pickle can be unsafe if not used carefully"
+        }
+      ],
+      "total_vulns": 1,
+      "critical_vulns": 0,
+      "high_vulns": 1,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/health.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/hyperscale_optimization.py",
+      "vulnerabilities": [
+        {
+          "type": "unsafe_deserialization",
+          "severity": "high",
+          "line": 184,
+          "code": "pickle.loads(",
+          "description": "Unsafe deserialization that could lead to code execution"
+        },
+        {
+          "type": "unsafe_deserialization",
+          "severity": "high",
+          "line": 368,
+          "code": "pickle.load(",
+          "description": "Unsafe deserialization that could lead to code execution"
+        },
+        {
+          "type": "dangerous_import",
+          "severity": "high",
+          "line": 7,
+          "code": "import pickle",
+          "description": "Dangerous import: pickle can be unsafe if not used carefully"
+        },
+        {
+          "type": "requires_care_import",
+          "severity": "medium",
+          "line": 9,
+          "code": "import os",
+          "description": "Import requires careful usage: os"
+        }
+      ],
+      "total_vulns": 4,
+      "critical_vulns": 0,
+      "high_vulns": 3,
+      "medium_vulns": 1,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/i18n.py",
+      "vulnerabilities": [
+        {
+          "type": "requires_care_import",
+          "severity": "medium",
+          "line": 5,
+          "code": "import os",
+          "description": "Import requires careful usage: os"
+        }
+      ],
+      "total_vulns": 1,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 1,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/incremental.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/intelligent_autoscaling.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/intelligent_quality_gates.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/llm_providers.py",
+      "vulnerabilities": [
+        {
+          "type": "requires_care_import",
+          "severity": "medium",
+          "line": 5,
+          "code": "import os",
+          "description": "Import requires careful usage: os"
+        }
+      ],
+      "total_vulns": 1,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 1,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/ml_quality_gates.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/monitoring.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/multimodal_cleaning.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/neural_confidence.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/optimization.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/profiler.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/progressive_quality_gates.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/research.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/robust_enhancement.py",
+      "vulnerabilities": [
+        {
+          "type": "requires_care_import",
+          "severity": "medium",
+          "line": 30,
+          "code": "import os",
+          "description": "Import requires careful usage: os"
+        }
+      ],
+      "total_vulns": 1,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 1,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/scale_optimization.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/security.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/self_healing_coordinator.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/spark.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/streaming.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/validation.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/hyperscale_performance_optimizer.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    },
+    {
+      "file": "src/llm_tab_cleaner/chaos_engineering.py",
+      "vulnerabilities": [],
+      "total_vulns": 0,
+      "critical_vulns": 0,
+      "high_vulns": 0,
+      "medium_vulns": 0,
+      "low_vulns": 0
+    }
+  ],
+  "security_score": 0
+}
