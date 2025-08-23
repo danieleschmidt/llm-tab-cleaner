@@ -1,0 +1,41 @@
+{
+  "metrics": {
+    "namespace": "LLMTabCleaner/ap-southeast-1",
+    "metrics": [
+      "RequestCount",
+      "ResponseTime",
+      "ErrorRate",
+      "CPUUtilization",
+      "MemoryUtilization",
+      "ActiveConnections"
+    ],
+    "collection_interval": 60
+  },
+  "alarms": [
+    {
+      "name": "HighErrorRate-ap-southeast-1",
+      "metric": "ErrorRate",
+      "threshold": 5.0,
+      "comparison": "GreaterThanThreshold",
+      "evaluation_periods": 2
+    },
+    {
+      "name": "HighResponseTime-ap-southeast-1",
+      "metric": "ResponseTime",
+      "threshold": 2000,
+      "comparison": "GreaterThanThreshold",
+      "evaluation_periods": 3
+    }
+  ],
+  "dashboards": [
+    {
+      "name": "LLMTabCleaner-ap-southeast-1",
+      "widgets": [
+        "RequestCount",
+        "ErrorRate",
+        "ResponseTime",
+        "ResourceUtilization"
+      ]
+    }
+  ]
+}

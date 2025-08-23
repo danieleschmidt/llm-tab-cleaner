@@ -1,0 +1,26 @@
+{
+  "target_group": "llm-tab-cleaner-us-east-1",
+  "min_capacity": 2,
+  "max_capacity": 50,
+  "desired_capacity": 5,
+  "scaling_policies": [
+    {
+      "name": "scale-up",
+      "scaling_adjustment": 2,
+      "adjustment_type": "ChangeInCapacity",
+      "cooldown": 300,
+      "metric_name": "CPUUtilization",
+      "threshold": 70.0,
+      "comparison": "GreaterThanThreshold"
+    },
+    {
+      "name": "scale-down",
+      "scaling_adjustment": -1,
+      "adjustment_type": "ChangeInCapacity",
+      "cooldown": 600,
+      "metric_name": "CPUUtilization",
+      "threshold": 30.0,
+      "comparison": "LessThanThreshold"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "metrics": {
+    "namespace": "LLMTabCleaner/eu-west-1",
+    "metrics": [
+      "RequestCount",
+      "ResponseTime",
+      "ErrorRate",
+      "CPUUtilization",
+      "MemoryUtilization",
+      "ActiveConnections"
+    ],
+    "collection_interval": 60
+  },
+  "alarms": [
+    {
+      "name": "HighErrorRate-eu-west-1",
+      "metric": "ErrorRate",
+      "threshold": 5.0,
+      "comparison": "GreaterThanThreshold",
+      "evaluation_periods": 2
+    },
+    {
+      "name": "HighResponseTime-eu-west-1",
+      "metric": "ResponseTime",
+      "threshold": 2000,
+      "comparison": "GreaterThanThreshold",
+      "evaluation_periods": 3
+    }
+  ],
+  "dashboards": [
+    {
+      "name": "LLMTabCleaner-eu-west-1",
+      "widgets": [
+        "RequestCount",
+        "ErrorRate",
+        "ResponseTime",
+        "ResourceUtilization"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "type": "Application Load Balancer",
+  "scheme": "internet-facing",
+  "listeners": [
+    {
+      "port": 443,
+      "protocol": "HTTPS",
+      "ssl_policy": "ELBSecurityPolicy-TLS-1-2-2017-01",
+      "certificate": "arn:aws:acm:eu-west-1:123456789012:certificate/abc123"
+    }
+  ],
+  "target_groups": [
+    {
+      "name": "llm-tab-cleaner-eu-west-1",
+      "port": 8080,
+      "protocol": "HTTP",
+      "health_check": {
+        "path": "/health",
+        "interval": 30,
+        "timeout": 5,
+        "healthy_threshold": 2,
+        "unhealthy_threshold": 3
+      }
+    }
+  ],
+  "security_groups": [
+    "lb_sg"
+  ],
+  "subnets": [
+    "subnet-abc123",
+    "subnet-def456"
+  ]
+}
