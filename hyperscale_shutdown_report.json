@@ -1,0 +1,24 @@
+{
+  "shutdown_timestamp": "2025-08-25T12:02:01.732703",
+  "final_cache_stats": {
+    "hits": 0,
+    "misses": 3,
+    "hit_rate": 0.0,
+    "evictions": 0,
+    "entries_count": 3,
+    "memory_usage_mb": 3.6030092239379883,
+    "memory_utilization": 0.014074254781007767,
+    "redis_enabled": false
+  },
+  "final_resource_stats": {
+    "current_workers": 2,
+    "worker_range": "2-8",
+    "recent_load_avg": 0,
+    "recent_cpu_avg": 0,
+    "recent_memory_avg": 0,
+    "scaling_events_24h": 0,
+    "monitoring_active": false
+  },
+  "total_performance_metrics": 3,
+  "optimization_history": 3
+}
