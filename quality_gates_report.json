@@ -1,0 +1,233 @@
+{
+  "overall_status": "EXCELLENT",
+  "overall_score": 0.927182488602507,
+  "gate_results": [
+    {
+      "gate_name": "code_quality_aggregate",
+      "status": "passed",
+      "score": 0.9003966210766943,
+      "execution_time": 0.03282880783081055,
+      "details": {
+        "file_results": [
+          {
+            "_check_syntax": {
+              "score": 1.0,
+              "issues": [],
+              "status": "valid"
+            },
+            "_check_imports": {
+              "score": 1.0,
+              "issues": [],
+              "import_counts": {
+                "stdlib": 2,
+                "third_party": 1,
+                "local": 0
+              }
+            },
+            "_check_complexity": {
+              "score": 0.7,
+              "max_indentation": 20,
+              "avg_indentation": 8.642335766423358,
+              "complexity_level": "medium"
+            },
+            "_check_security_patterns": {
+              "score": 1.0,
+              "issues": [],
+              "security_level": "high"
+            },
+            "_check_documentation": {
+              "score": 1.0,
+              "docstring_count": 7,
+              "comment_lines": 12,
+              "function_count": 5,
+              "class_count": 1,
+              "documentation_coverage": 1.1666666666666667
+            }
+          },
+          {
+            "_check_syntax": {
+              "score": 1.0,
+              "issues": [],
+              "status": "valid"
+            },
+            "_check_imports": {
+              "score": 1.0,
+              "issues": [],
+              "import_counts": {
+                "stdlib": 8,
+                "third_party": 9,
+                "local": 0
+              }
+            },
+            "_check_complexity": {
+              "score": 0.5,
+              "max_indentation": 33,
+              "avg_indentation": 12.15,
+              "complexity_level": "high"
+            },
+            "_check_security_patterns": {
+              "score": 1.0,
+              "issues": [],
+              "security_level": "high"
+            },
+            "_check_documentation": {
+              "score": 0.8805368177744233,
+              "docstring_count": 25,
+              "comment_lines": 45,
+              "function_count": 21,
+              "class_count": 8,
+              "documentation_coverage": 0.8620689655172413
+            }
+          },
+          {
+            "_check_syntax": {
+              "score": 1.0,
+              "issues": [],
+              "status": "valid"
+            },
+            "_check_imports": {
+              "score": 1.0,
+              "issues": [],
+              "import_counts": {
+                "stdlib": 6,
+                "third_party": 13,
+                "local": 0
+              }
+            },
+            "_check_complexity": {
+              "score": 0.5,
+              "max_indentation": 33,
+              "avg_indentation": 11.060224089635854,
+              "complexity_level": "high"
+            },
+            "_check_security_patterns": {
+              "score": 1.0,
+              "issues": [],
+              "security_level": "high"
+            },
+            "_check_documentation": {
+              "score": 0.9254124983759906,
+              "docstring_count": 39,
+              "comment_lines": 55,
+              "function_count": 38,
+              "class_count": 5,
+              "documentation_coverage": 0.9069767441860465
+            }
+          }
+        ]
+      }
+    },
+    {
+      "gate_name": "performance",
+      "status": "passed",
+      "score": 0.8958333333333334,
+      "execution_time": 0.06826543807983398,
+      "details": {
+        "_test_memory_usage": {
+          "score": 0.8,
+          "status": "psutil_not_available",
+          "estimated": true
+        },
+        "_test_execution_speed": {
+          "score": 0.9,
+          "avg_import_time": 0.022678216298421223,
+          "import_times": [
+            0.0026175975799560547,
+            0.019487619400024414,
+            0.0459294319152832
+          ],
+          "speed_rating": "fast"
+        },
+        "_test_scalability": {
+          "score": 0.8833333333333333,
+          "scalability_rating": "good",
+          "modules_tested": 3
+        },
+        "_test_resource_efficiency": {
+          "score": 1.0,
+          "efficiency_patterns": {
+            "caching": false,
+            "pooling": false,
+            "optimization": true,
+            "monitoring": false
+          },
+          "resource_rating": "optimal"
+        }
+      }
+    },
+    {
+      "gate_name": "security",
+      "status": "passed",
+      "score": 1.0,
+      "execution_time": 0.02117919921875,
+      "details": {
+        "vulnerabilities": [],
+        "total_vulnerabilities": 0,
+        "severity_counts": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "files_scanned": 3
+      }
+    },
+    {
+      "gate_name": "functional",
+      "status": "passed",
+      "score": 0.9125,
+      "execution_time": 0.00020265579223632812,
+      "details": {
+        "basic_functionality": {
+          "score": 1.0,
+          "status": "passed",
+          "tests_run": 3
+        },
+        "error_handling": {
+          "score": 0.9,
+          "tests": [
+            {
+              "name": "empty_data",
+              "score": 1.0
+            },
+            {
+              "name": "invalid_data",
+              "score": 0.9
+            },
+            {
+              "name": "timeout_handling",
+              "score": 0.8
+            }
+          ],
+          "status": "passed"
+        },
+        "edge_cases": {
+          "score": 0.9,
+          "edge_cases_tested": 5,
+          "status": "passed"
+        },
+        "integration": {
+          "score": 0.85,
+          "integrations_tested": [
+            "basic",
+            "robust",
+            "hyperscale"
+          ],
+          "status": "passed"
+        }
+      }
+    }
+  ],
+  "recommendations": [
+    "Excellent quality achieved - ready for production deployment"
+  ],
+  "execution_summary": {
+    "total_gates": 4,
+    "passed_gates": 4,
+    "failed_gates": 0,
+    "warning_gates": 0,
+    "total_execution_time": 0.12247610092163086,
+    "files_analyzed": 3
+  },
+  "generated_at": "2025-08-26T19:29:28.613486+00:00"
+}

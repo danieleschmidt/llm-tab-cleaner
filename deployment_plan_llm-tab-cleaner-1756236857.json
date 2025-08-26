@@ -1,0 +1,371 @@
+{
+  "deployment_id": "llm-tab-cleaner-1756236857",
+  "global_config": {
+    "environment": "production",
+    "regions": [
+      "us-east-1",
+      "eu-west-1",
+      "ap-southeast-1"
+    ],
+    "scaling_policy": {
+      "target_cpu": 70,
+      "target_memory": 80,
+      "scale_up_cooldown": 300,
+      "scale_down_cooldown": 600
+    },
+    "monitoring_config": {
+      "metrics_retention": "30d",
+      "log_retention": "90d",
+      "alert_channels": [
+        "email",
+        "slack",
+        "pagerduty"
+      ]
+    },
+    "security_config": {
+      "encryption_at_rest": true,
+      "encryption_in_transit": true,
+      "vulnerability_scanning": true,
+      "compliance_monitoring": true
+    },
+    "compliance_tags": [
+      "GDPR",
+      "CCPA",
+      "SOC2",
+      "ISO27001"
+    ],
+    "i18n_languages": [
+      "en",
+      "es",
+      "fr",
+      "de",
+      "ja",
+      "zh"
+    ],
+    "deployment_strategy": "blue_green"
+  },
+  "artifacts": {
+    "artifacts_directory": "deployment_artifacts_llm-tab-cleaner-1756236857",
+    "docker_files": [
+      "Dockerfile.production",
+      "docker-compose.production.yml"
+    ],
+    "k8s_manifests": [
+      "namespace",
+      "deployment",
+      "service",
+      "hpa",
+      "ingress"
+    ],
+    "terraform_files": [
+      "main.tf"
+    ],
+    "helm_charts": [
+      "Chart.yaml",
+      "values.yaml"
+    ]
+  },
+  "regional_configs": {
+    "us-east-1": {
+      "region": "us-east-1",
+      "scaling_policy": {
+        "min_instances": 2,
+        "max_instances": 20,
+        "target_cpu": 70,
+        "target_memory": 80
+      },
+      "load_balancer": {
+        "type": "application",
+        "scheme": "internet-facing",
+        "ssl_policy": "ELBSecurityPolicy-TLS-1-2-2017-01"
+      },
+      "infrastructure": {
+        "instance_types": [
+          "t3.medium",
+          "t3.large"
+        ],
+        "availability_zones": [
+          "us-east-1a",
+          "us-east-1b",
+          "us-east-1c"
+        ],
+        "vpc_cidr": "10.38.0.0/16"
+      },
+      "compliance": {
+        "data_residency": [
+          "US_ONLY"
+        ],
+        "regulations": [
+          "CCPA",
+          "SOC2"
+        ]
+      }
+    },
+    "eu-west-1": {
+      "region": "eu-west-1",
+      "scaling_policy": {
+        "min_instances": 2,
+        "max_instances": 20,
+        "target_cpu": 70,
+        "target_memory": 80
+      },
+      "load_balancer": {
+        "type": "application",
+        "scheme": "internet-facing",
+        "ssl_policy": "ELBSecurityPolicy-TLS-1-2-2017-01"
+      },
+      "infrastructure": {
+        "instance_types": [
+          "t3.medium",
+          "t3.large"
+        ],
+        "availability_zones": [
+          "eu-west-1a",
+          "eu-west-1b",
+          "eu-west-1c"
+        ],
+        "vpc_cidr": "10.95.0.0/16"
+      },
+      "compliance": {
+        "data_residency": [
+          "EU_ONLY",
+          "GDPR_COMPLIANT"
+        ],
+        "regulations": [
+          "GDPR",
+          "ISO27001"
+        ]
+      }
+    },
+    "ap-southeast-1": {
+      "region": "ap-southeast-1",
+      "scaling_policy": {
+        "min_instances": 1,
+        "max_instances": 10,
+        "target_cpu": 70,
+        "target_memory": 80
+      },
+      "load_balancer": {
+        "type": "application",
+        "scheme": "internet-facing",
+        "ssl_policy": "ELBSecurityPolicy-TLS-1-2-2017-01"
+      },
+      "infrastructure": {
+        "instance_types": [
+          "t3.medium",
+          "t3.large"
+        ],
+        "availability_zones": [
+          "ap-southeast-1a",
+          "ap-southeast-1b",
+          "ap-southeast-1c"
+        ],
+        "vpc_cidr": "10.160.0.0/16"
+      },
+      "compliance": {
+        "data_residency": [
+          "APAC_ONLY",
+          "PDPA_COMPLIANT"
+        ],
+        "regulations": [
+          "PDPA",
+          "ISO27001"
+        ]
+      }
+    }
+  },
+  "monitoring_setup": {
+    "prometheus_config": {
+      "global": {
+        "scrape_interval": "15s",
+        "evaluation_interval": "15s"
+      },
+      "scrape_configs": [
+        {
+          "job_name": "llm-tab-cleaner",
+          "static_configs": [
+            {
+              "targets": [
+                "llm-tab-cleaner:8080"
+              ]
+            }
+          ],
+          "metrics_path": "/metrics",
+          "scrape_interval": "30s"
+        }
+      ]
+    },
+    "grafana_dashboard": {
+      "title": "LLM Tab Cleaner - Production Monitoring",
+      "tags": [
+        "llm",
+        "data-cleaning",
+        "production"
+      ],
+      "timezone": "UTC"
+    },
+    "alert_rules": {
+      "groups": [
+        {
+          "name": "llm-tab-cleaner-alerts",
+          "rules": [
+            {
+              "alert": "HighErrorRate",
+              "expr": "rate(http_requests_total{status=~'5..'}[5m]) > 0.1",
+              "for": "5m",
+              "labels": {
+                "severity": "critical"
+              },
+              "annotations": {
+                "summary": "High error rate detected"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "monitoring_endpoints": {
+      "prometheus": "http://prometheus:9090",
+      "grafana": "http://grafana:3000",
+      "alertmanager": "http://alertmanager:9093"
+    }
+  },
+  "security_setup": {
+    "network_policies": {
+      "ingress_rules": [
+        {
+          "from": "internet",
+          "ports": [
+            "443"
+          ],
+          "protocol": "HTTPS"
+        }
+      ],
+      "egress_rules": [
+        {
+          "to": "llm_providers",
+          "ports": [
+            "443"
+          ],
+          "protocol": "HTTPS"
+        }
+      ]
+    },
+    "encryption": {
+      "at_rest": {
+        "enabled": true,
+        "algorithm": "AES-256"
+      },
+      "in_transit": {
+        "enabled": true,
+        "tls_version": "1.3"
+      }
+    },
+    "access_control": {
+      "authentication": "JWT",
+      "authorization": "RBAC",
+      "rate_limiting": {
+        "requests_per_minute": 1000,
+        "burst_size": 100
+      }
+    },
+    "compliance": {
+      "frameworks": [
+        "GDPR",
+        "CCPA",
+        "SOC2",
+        "ISO27001"
+      ],
+      "data_retention": {
+        "logs": "90 days",
+        "audit_trails": "7 years",
+        "user_data": "as_requested"
+      },
+      "privacy": {
+        "data_anonymization": true,
+        "consent_management": true,
+        "right_to_deletion": true
+      }
+    },
+    "vulnerability_scanning": {
+      "enabled": true,
+      "schedule": "daily",
+      "auto_remediation": false
+    }
+  },
+  "i18n_setup": {
+    "supported_languages": [
+      "en",
+      "es",
+      "fr",
+      "de",
+      "ja",
+      "zh"
+    ],
+    "default_language": "en",
+    "language_configs": {
+      "en": {
+        "locale": "en",
+        "rtl": false,
+        "date_format": "MM/DD/YYYY",
+        "number_format": "1,234.56",
+        "currency": "USD"
+      },
+      "es": {
+        "locale": "es",
+        "rtl": false,
+        "date_format": "DD/MM/YYYY",
+        "number_format": "1.234,56",
+        "currency": "EUR"
+      },
+      "fr": {
+        "locale": "fr",
+        "rtl": false,
+        "date_format": "DD/MM/YYYY",
+        "number_format": "1 234,56",
+        "currency": "EUR"
+      },
+      "de": {
+        "locale": "de",
+        "rtl": false,
+        "date_format": "DD.MM.YYYY",
+        "number_format": "1.234,56",
+        "currency": "EUR"
+      },
+      "ja": {
+        "locale": "ja",
+        "rtl": false,
+        "date_format": "YYYY/MM/DD",
+        "number_format": "1,234.56",
+        "currency": "JPY"
+      },
+      "zh": {
+        "locale": "zh",
+        "rtl": false,
+        "date_format": "YYYY/MM/DD",
+        "number_format": "1,234.56",
+        "currency": "CNY"
+      }
+    },
+    "translation_keys": {
+      "errors": {
+        "validation_failed": "Data validation failed",
+        "processing_error": "Error processing data",
+        "rate_limit_exceeded": "Rate limit exceeded"
+      },
+      "messages": {
+        "processing_started": "Data processing started",
+        "processing_completed": "Data processing completed",
+        "quality_score": "Quality score"
+      },
+      "ui": {
+        "upload": "Upload",
+        "download": "Download",
+        "process": "Process",
+        "cancel": "Cancel"
+      }
+    },
+    "fallback_behavior": "use_default_language"
+  },
+  "created_at": "2025-08-26T19:34:17.517875+00:00"
+}
