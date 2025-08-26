@@ -1,0 +1,66 @@
+# Default values for llm-tab-cleaner
+replicaCount: 3
+
+image:
+  repository: llm-tab-cleaner
+  tag: "production"
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+  hosts:
+    - host: api.llm-tab-cleaner.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: llm-tab-cleaner-tls
+      hosts:
+        - api.llm-tab-cleaner.com
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 4Gi
+  requests:
+    cpu: 1000m
+    memory: 2Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+env:
+  - name: ENVIRONMENT
+    value: "production"
+  - name: LOG_LEVEL
+    value: "INFO"
+
+probes:
+  liveness:
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 60
+    periodSeconds: 30
+  readiness:
+    httpGet:
+      path: /ready
+      port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 10

@@ -1,0 +1,36 @@
+# Production Dockerfile for LLM Tab Cleaner
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY pyproject.toml .
+RUN pip install --no-cache-dir .
+
+# Copy application code
+COPY src/ ./src/
+COPY examples/ ./examples/
+
+# Create non-root user
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python -c "import src.llm_tab_cleaner; print('healthy')" || exit 1
+
+# Default command
+CMD ["python", "-m", "src.llm_tab_cleaner.cli"]
+
+# Labels for metadata
+LABEL version="0.3.0" \
+      description="LLM Tab Cleaner Production" \
+      maintainer="daniel@terragonlabs.com"
