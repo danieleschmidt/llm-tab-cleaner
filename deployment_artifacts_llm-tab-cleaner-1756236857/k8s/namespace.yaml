@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: llm-tab-cleaner
-  labels:
-    app: llm-tab-cleaner
-    environment: production
-    deployment-id: llm-tab-cleaner-1756236857

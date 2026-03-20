@@ -1,1 +1,0 @@
-"""Performance and benchmark tests for LLM Tab Cleaner."""

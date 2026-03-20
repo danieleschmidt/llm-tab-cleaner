@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: llm-tab-cleaner
-  labels:
-    app: llm-tab-cleaner
-    version: v2.0.0

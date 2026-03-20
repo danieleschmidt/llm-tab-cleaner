@@ -1,108 +1,70 @@
-"""Tests for confidence calibration module."""
-import pytest
+"""Tests for ConfidenceScorer."""
+
 import numpy as np
 import pandas as pd
-from unittest.mock import Mock, patch
+import pytest
 
-from llm_tab_cleaner.confidence import ConfidenceCalibrator
+from tab_cleaner.confidence import ConfidenceScorer
 
 
-class TestConfidenceCalibrator:
-    """Test suite for ConfidenceCalibrator class."""
-    
-    def test_init(self):
-        """Test ConfidenceCalibrator initialization."""
-        calibrator = ConfidenceCalibrator()
-        assert calibrator is not None
-        assert hasattr(calibrator, 'fit')
-        assert hasattr(calibrator, 'calibrate')
-    
-    def test_fit_with_empty_data(self):
-        """Test fit method with empty data."""
-        calibrator = ConfidenceCalibrator()
-        predictions = []
-        ground_truth = []
-        
-        # Should handle empty data gracefully
-        calibrator.fit(predictions, ground_truth)
-    
-    def test_fit_with_sample_data(self):
-        """Test fit method with sample data."""
-        calibrator = ConfidenceCalibrator()
-        predictions = [0.9, 0.8, 0.7, 0.6]
-        ground_truth = [True, True, False, False]
-        
-        calibrator.fit(predictions, ground_truth)
-        
-        # Should not raise any exceptions and should store training data
-        assert calibrator is not None
-    
-    def test_calibrate_before_fit(self):
-        """Test calibrate method before fitting."""
-        calibrator = ConfidenceCalibrator()
-        confidence = 0.8
-        
-        # Should return the original confidence if not fitted
-        result = calibrator.calibrate(confidence)
-        assert result == confidence
-    
-    def test_calibrate_after_fit(self):
-        """Test calibrate method after fitting."""
-        calibrator = ConfidenceCalibrator()
-        predictions = [0.9, 0.8, 0.7, 0.6, 0.5]
-        ground_truth = [True, True, True, False, False]
-        
-        calibrator.fit(predictions, ground_truth)
-        
-        # Should return calibrated confidence
-        result = calibrator.calibrate(0.8)
-        assert isinstance(result, (int, float))
-        assert 0 <= result <= 1
-    
-    def test_calibrate_edge_cases(self):
-        """Test calibrate method with edge cases."""
-        calibrator = ConfidenceCalibrator()
-        
-        # Test with 0 confidence
-        result = calibrator.calibrate(0.0)
-        assert result == 0.0
-        
-        # Test with 1.0 confidence
-        result = calibrator.calibrate(1.0)
-        assert result == 1.0
-        
-        # Test with negative confidence (should be clamped)
-        result = calibrator.calibrate(-0.1)
-        assert result >= 0.0
-        
-        # Test with confidence > 1.0 (should be clamped)
-        result = calibrator.calibrate(1.1)
-        assert result <= 1.0
-    
-    def test_fit_with_mismatched_lengths(self):
-        """Test fit method with mismatched array lengths."""
-        calibrator = ConfidenceCalibrator()
-        predictions = [0.9, 0.8]
-        ground_truth = [True, True, False]  # Different length
-        
-        # Should handle mismatched lengths gracefully or raise appropriate error
-        with pytest.raises((ValueError, IndexError)):
-            calibrator.fit(predictions, ground_truth)
-    
-    def test_multiple_fit_calls(self):
-        """Test multiple calls to fit method."""
-        calibrator = ConfidenceCalibrator()
-        
-        # First fit
-        predictions1 = [0.9, 0.8]
-        ground_truth1 = [True, False]
-        calibrator.fit(predictions1, ground_truth1)
-        
-        # Second fit (should update the calibrator)
-        predictions2 = [0.7, 0.6]
-        ground_truth2 = [True, True]
-        calibrator.fit(predictions2, ground_truth2)
-        
-        # Should work without issues
-        result = calibrator.calibrate(0.7)
-        assert isinstance(result, (int, float))
+def test_confidence_scorer_unchanged_cells():
+    df_orig = pd.DataFrame({"a": [1.0, 2.0, 3.0], "b": [10.0, 20.0, 30.0]})
+    df_clean = df_orig.copy()
+    scorer = ConfidenceScorer()
+    scores = scorer.score_dataframe(df_orig, df_clean, changes=[])
+
+    # All unchanged → all scores should be 1.0
+    assert scores.shape == df_clean.shape
+    assert (scores == 1.0).all().all()
+
+
+def test_confidence_scorer_changed_cells():
+    df_orig = pd.DataFrame({"x": [1.0, 2.0, 100.0]})
+    df_clean = pd.DataFrame({"x": [1.0, 2.0, 5.0]})  # 100 → 5 (clipped)
+    changes = [{"row": 2, "col": "x", "old_val": 100.0, "new_val": 5.0, "action": "clip_outlier"}]
+
+    scorer = ConfidenceScorer()
+    scores = scorer.score_dataframe(df_orig, df_clean, changes)
+
+    # Unchanged cells stay at 1.0
+    assert scores.loc[0, "x"] == 1.0
+    assert scores.loc[1, "x"] == 1.0
+    # Changed cell is < 1.0
+    assert scores.loc[2, "x"] < 1.0
+
+
+def test_confidence_scorer_imputed_null():
+    df_orig = pd.DataFrame({"y": [1.0, np.nan, 3.0]})
+    df_clean = pd.DataFrame({"y": [1.0, 2.0, 3.0]})
+    changes = [{"row": 1, "col": "y", "old_val": None, "new_val": 2.0, "action": "impute_missing"}]
+
+    scorer = ConfidenceScorer()
+    scores = scorer.score_dataframe(df_orig, df_clean, changes)
+
+    # Imputed cell — old_val is None so no relative-change penalty, stays at 0.9
+    assert 0.0 < scores.loc[1, "y"] <= 1.0
+
+
+def test_confidence_scorer_removed_cell():
+    df_orig = pd.DataFrame({"z": [1.0, 2.0, 3.0]})
+    df_clean = pd.DataFrame({"z": [1.0, 2.0, 3.0]})
+    # Simulate a removal change (new_val=None)
+    changes = [{"row": 0, "col": "z", "old_val": 1.0, "new_val": None, "action": "remove_outlier_row"}]
+
+    scorer = ConfidenceScorer()
+    scores = scorer.score_dataframe(df_orig, df_clean, changes)
+
+    assert scores.loc[0, "z"] == 0.0
+
+
+def test_confidence_scores_bounded():
+    """All scores must be in [0, 1]."""
+    df_orig = pd.DataFrame({"a": [1.0, 2.0, 300.0, 4.0]})
+    df_clean = pd.DataFrame({"a": [1.0, 2.0, 10.0, 4.0]})
+    changes = [{"row": 2, "col": "a", "old_val": 300.0, "new_val": 10.0, "action": "clip_outlier"}]
+
+    scorer = ConfidenceScorer()
+    scores = scorer.score_dataframe(df_orig, df_clean, changes)
+
+    assert (scores >= 0.0).all().all()
+    assert (scores <= 1.0).all().all()
